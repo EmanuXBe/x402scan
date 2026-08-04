@@ -1,64 +1,64 @@
 # PRD — StellarScan
 
 **Stellar Summit São Paulo 2026** · Sub-lane 3A, Agentic Payments · 1,750 USDC
-Fork de `Merit-Systems/x402scan` (Apache 2.0) · Entrega: 5 de agosto
+Fork of `Merit-Systems/x402scan` (Apache 2.0) · Ship date: August 5
 
 ---
 
-## Problema
+## Problem
 
-Stellar no aparece en ninguna herramienta de observabilidad de pagos agénticos. x402scan cubre Base y Solana; MPPscan cubre Tempo. La ausencia no se debe a falta de actividad, sino a que nadie escribió el adaptador.
+Stellar doesn't appear in any agentic-payments observability tool. x402scan covers Base and Solana; MPPscan covers Tempo. The gap isn't caused by lack of activity — nobody wrote the adapter.
 
-**One-liner:** Stellar deja de ser invisible en el mapa de la economía agéntica.
+**One-liner:** Stellar stops being invisible on the map of the agentic economy.
 
-## Por qué es viable en 48h
+## Why this is feasible in 48h
 
-El modelo de datos de x402scan ya es agnóstico de cadena. `TransferEvent` no asume EVM en ningún campo: `chain` y `provider` son texto libre, no hay tipos `Bytes` ni longitudes fijas. Las direcciones `G…`/`C…` y los hashes de 64 caracteres entran sin tocar el esquema.
+x402scan's data model is already chain-agnostic. `TransferEvent` assumes EVM in no field: `chain` and `provider` are free text, there are no `Bytes` types and no fixed lengths. Stellar's `G…`/`C…` addresses and 64-character hashes fit without touching the schema.
 
-**Cero migraciones de base de datos.** El trabajo es un adaptador, no un refactor.
+**Zero database migrations.** The work is an adapter, not a refactor.
 
-## El hallazgo: por qué MPP no entra
+## The finding: why MPP is out of scope
 
-El modelo de atribución de x402scan identifica pagos por **dirección de facilitator**: un transfer cuenta como pago x402 si lo tocó un facilitator registrado.
+x402scan's attribution model identifies payments by **facilitator address**: a transfer counts as an x402 payment if a registered facilitator touched it.
 
-Para **x402 en Stellar eso funciona** — existen facilitators con dirección identificable (OpenZeppelin Relayer, Coinbase testnet). Registrar direcciones en una estructura que ya existe.
+For **x402 on Stellar this works** — facilitators exist with identifiable addresses (OpenZeppelin Relayer, Coinbase testnet). It's a matter of registering addresses in a structure that already exists.
 
-Para **MPP no funciona**. MPP opera sin facilitator externo: liquida transfers SAC directos entre agente y servicio. Sin facilitator que emparejar, un pago MPP es indistinguible de cualquier transferencia de tokens.
+For **MPP it doesn't work**. MPP operates without an external facilitator: it settles direct SAC transfers between agent and service. With no facilitator to match against, an MPP payment is indistinguishable from any other token transfer.
 
-La excepción es el modo sesión: el contrato `one-way-channel` sí tiene un ID identificable, lo que abre atribución **por contrato en lugar de por dirección**.
+The exception is session mode: the `one-way-channel` contract does have an identifiable ID, which opens attribution **by contract instead of by address**.
 
-> Este diagnóstico es el activo intelectual del proyecto. Explica algo que ni Merit ni SDF tenían documentado. Se presenta como hallazgo, no como limitación.
+> This diagnosis is the project's intellectual asset. It explains something neither Merit nor SDF had documented. We present it as a finding, not as a limitation.
 
-## Alcance
+## Scope
 
-**Fase 1 (esta entrega).** Stellar como cadena seleccionable, con pagos x402 vía facilitator indexados y visibles en el explorador.
+**Phase 1 (this delivery).** Stellar as a selectable chain, with x402 payments settled via facilitator indexed and visible in the explorer.
 
-**Fase 2 (post-bounty).** Atribución de MPP por ID de contrato, empezando por `one-way-channel`. Métricas de sesión: micro-llamadas por settlement, costo por llamada.
+**Phase 2 (post-bounty).** MPP attribution by contract ID, starting with `one-way-channel`. Session metrics: micro-calls per settlement, cost per call.
 
-**Fuera de alcance.** Wallet embebida · onramp · chat de agente · registro de recursos · alertas · analytics · cobertura de MPP · paridad total de funcionalidades · mainnet si testnet basta para demostrar.
+**Out of scope.** Embedded wallet · onramp · agent chat · resource registration · alerts · analytics · MPP coverage · full feature parity · mainnet if testnet is enough to demonstrate.
 
-## Requerimientos
+## Requirements
 
-Cada requerimiento es su propio criterio de aceptación.
+Each requirement is its own acceptance criterion.
 
-| ID | Requerimiento | Verificación | Prio |
+| ID | Requirement | Verification | Prio |
 |---|---|---|---|
-| RF-01 | Stellar aparece en el selector de cadenas | `pnpm dev` levanta y Stellar es seleccionable | Must |
-| RF-02 | Los transfers de USDC originados por un facilitator registrado se indexan | ≥1 fila con `chain = 'stellar'` en `TransferEvent`, de un facilitator real | Must |
-| RF-03 | El dashboard muestra volumen, nº de transacciones y compradores únicos | Métricas correctas — verificadas contra stellar.expert, sin errores de render | Must |
-| RF-04 | Los hashes enlazan a un explorador de Stellar | Un hash abre la transacción correcta en stellar.expert | Must |
-| RF-05 | Documento del problema de atribución de MPP | Presente en el repo | Must |
-| RF-06 | **PR abierto contra `Merit-Systems/x402scan`** | PR existe y es revisable | Must |
-| RF-07 | Al menos un facilitator de Stellar visible con sus estadísticas | Aparece en la vista de facilitators | Should |
-| RF-08 | Direcciones `G…`/`C…` formateadas y truncadas · filtro por cadena funcional | Correcto en las vistas que ya lo soportan | Should |
+| RF-01 | Stellar appears in the chain selector | `pnpm dev` boots and Stellar is selectable | Must |
+| RF-02 | USDC transfers originated by a registered facilitator are indexed | ≥1 row with `chain = 'stellar'` in `TransferEvent`, from a real facilitator | Must |
+| RF-03 | Dashboard shows volume, transaction count and unique buyers | Metrics correct — cross-checked against stellar.expert, no render errors | Must |
+| RF-04 | Transaction hashes link to a Stellar explorer | A hash opens the correct transaction on stellar.expert | Must |
+| RF-05 | Document on the MPP attribution problem | Present in the repo | Must |
+| RF-06 | **PR opened against `Merit-Systems/x402scan`** | PR exists and is reviewable | Must |
+| RF-07 | At least one Stellar facilitator visible with its stats | Appears in the facilitators view | Should |
+| RF-08 | `G…`/`C…` addresses formatted and truncated · chain filter works | Correct in the views that already support it | Should |
 
-**RF-06 es el que convierte la submission de demo a contribución.** Vale más que cualquier funcionalidad adicional.
+**RF-06 is what turns the submission from a demo into a contribution.** It is worth more than any additional feature.
 
-**Restricción transversal:** ningún cambio puede degradar Base ni Solana. Es condición del PR upstream.
+**Cross-cutting constraint:** no change may degrade Base or Solana. This is a condition of the upstream PR.
 
-## Entregables
+## Deliverables
 
-- Repositorio del fork, público, con README que explique qué se añadió y por qué
-- PR upstream a `Merit-Systems/x402scan`
-- Documento técnico sobre atribución de pagos agénticos en Stellar
-- Video demo (~3 min)
+- Public fork repository, with a README explaining what was added and why
+- Upstream PR to `Merit-Systems/x402scan`
+- Technical document on agentic payment attribution on Stellar
+- Demo video (~3 min)

@@ -1,158 +1,183 @@
 # Sprint Plan — StellarScan
 
-2 personas · ~36h útiles (4 ago tarde → 5 ago noche) · Doc padre: [PRD.md](PRD.md)
+2 people · ~36 usable hours (Aug 4 afternoon → Aug 5 night) · Parent doc: [PRD.md](PRD.md)
 
 ---
 
-## Restricciones técnicas verificadas
+## Verified technical constraints
 
-Cuatro hechos medidos sobre el código. Son load-bearing: los tickets asumen esto.
+Four facts measured against the code. They are load-bearing — the tickets assume them.
 
-1. **Stellar entra en la ruta de lectura, no en la de wallet.** `Chain.SOLANA` aparece en 49 archivos, casi todos wallet/onramp/withdraw — fuera de alcance. Se separa `WALLET_CHAINS` de `SUPPORTED_CHAINS` (ticket B-6). Sin esa línea, el cambio se filtra a 40+ archivos y el sprint muere. La cascada de `EvmChain` en sí es menor: 7 archivos, 13 referencias.
+1. **Stellar goes into the read path, not the wallet path.** `Chain.SOLANA` appears in 49 files, nearly all wallet/onramp/withdraw — out of scope. We split `WALLET_CHAINS` from `SUPPORTED_CHAINS` (ticket B-6). Without that one line, the change leaks into 40+ files and the sprint dies. The `EvmChain` cascade itself is minor: 7 files, 13 references.
 
-2. **Hubble no necesita un `QueryProvider` nuevo.** [fetch/bigquery/fetch.ts](sync/transfers/trigger/fetch/bigquery/fetch.ts) es genérico — el dataset vive dentro del SQL que devuelve `buildQuery`. Hubble es otro dataset de BigQuery. Se reusa `QueryProvider.BIGQUERY`; el adaptador son dos archivos nuevos.
+2. **Hubble needs no new `QueryProvider`.** [fetch/bigquery/fetch.ts](sync/transfers/trigger/fetch/bigquery/fetch.ts) is generic — the dataset lives inside the SQL string returned by `buildQuery`. Hubble is just another BigQuery dataset. We reuse `QueryProvider.BIGQUERY`; the adapter is two new files.
 
-3. **`normalizeAddress` corrompe direcciones de Stellar.** [sync.ts:17](sync/transfers/trigger/sync.ts#L17) pasa a minúsculas todo lo que no es Solana; las direcciones Stellar son base32 case-sensitive. Alimenta la clave de sync state → el cursor nunca casaría y el sync re-consultaría la misma ventana en loop. Ticket B-7.
+3. **`normalizeAddress` corrupts Stellar addresses.** [sync.ts:17](sync/transfers/trigger/sync.ts#L17) lowercases everything that isn't Solana; Stellar addresses are case-sensitive base32. It feeds the sync state key → the cursor would never match and the sync would re-query the same window forever. Ticket B-7.
 
-4. **El adaptador plantilla está apagado.** `solana/bigquery/config.ts` tiene `enabled: false`; la ruta viva es bitquery. Puede estar bit-rotted. Ticket A-5 lo enciende para validar la ruta BigQuery end-to-end antes de escribir nada de Stellar.
+4. **The template adapter is switched off.** `solana/bigquery/config.ts` has `enabled: false`; the live path is bitquery. It may be bit-rotted. Ticket A-5 turns it on to validate the BigQuery path end-to-end before writing any Stellar code.
 
 ---
 
 ## Roles
 
-| | **S — Sistemas** | **I — Industrial** |
+| | **S — Systems eng.** | **I — Industrial eng.** |
 |---|---|---|
-| Dominio | Repo, TypeScript, adaptador de sync, frontend, PR | SQL, verificación de datos, narrativa, submission |
-| Ruta crítica | Sí | No — trabaja en paralelo y desbloquea a S |
+| Domain | Repo, TypeScript, sync adapter, frontend, PR | SQL, data verification, narrative, submission |
+| Critical path | Yes | No — works in parallel and unblocks S |
 
-**Asignación clave:** el riesgo #1 (¿Hubble expone eventos SAC?) se resuelve con SQL en la consola de BigQuery, sin tocar el repo. Es trabajo de I. Mientras S levanta el entorno, I explora el esquema y entrega una query que devuelve filas reales. Eso saca el riesgo #1 de la ruta crítica.
+**Key assignment:** risk #1 (does Hubble expose SAC events?) is solved with SQL in the BigQuery console, without touching the repo. That's I's work. While S brings up the local environment, I explores the schema and hands over a query that returns real rows. That takes risk #1 off the critical path.
 
 ---
 
 ## Backlog
 
-### A · Hora 0–4 — Desbloqueo paralelo
+### A · Hour 0–4 — Parallel unblocking
 
-| ID | Tarea | Dueño | Gate |
+| ID | Task | Owner | Gate |
 |---|---|---|---|
-| A-1 | Fork + `pnpm install` + `pnpm dev` | S | La app carga |
-| A-2 | DB local + Prisma + credenciales Trigger.dev | S | `TransferEvent` consultable |
-| A-3 | **Esquema de Hubble en consola BigQuery** | **I** | Query que devuelve ≥1 transfer de USDC SAC |
-| A-4 | **Direcciones de facilitators Stellar** (Discord SDF, docs OZ Relayer) | **I** | ≥1 dirección `G…` verificable en stellar.expert |
-| A-5 | Encender `solana/bigquery` y correrlo | S | La ruta BigQuery escribe filas, o falla con error conocido |
+| A-1 | Fork + `pnpm install` + `pnpm dev` | S | App loads |
+| A-2 | Local DB + Prisma + Trigger.dev credentials | S | `TransferEvent` queryable |
+| A-3 | **Hubble schema discovery in the BigQuery console** | **I** | Query returning ≥1 USDC SAC transfer |
+| A-4 | **Stellar facilitator addresses** (SDF Discord, OZ Relayer docs) | **I** | ≥1 `G…` address verifiable on stellar.expert |
+| A-5 | Enable `solana/bigquery` and run it | S | BigQuery path writes rows, or fails with a known error |
 
-**A-3 y A-4 son los dos únicos bloqueantes duros del proyecto.**
+**A-3 and A-4 are the project's only hard blockers.**
 
-*A-3 — qué buscar en `crypto-stellar.crypto_stellar`:* `history_contract_events` (eventos SAC), `history_transactions` (hash), `enriched_history_operations`. La query debe devolver, para una dirección de facilitator: `tx_hash`, `sender`, `recipient`, `amount`, `block_timestamp`, `contract_id`. Es decir, las columnas de `TransferEventData`.
+*A-3 — what to look for in `crypto-stellar.crypto_stellar`:* `history_contract_events` (SAC events), `history_transactions` (hash), `enriched_history_operations`. For a given facilitator address, the query must return `tx_hash`, `sender`, `recipient`, `amount`, `block_timestamp`, `contract_id` — i.e. the columns of `TransferEventData`.
 
-### B · Hora 4–10 — Cimientos declarativos
+### B · Hour 4–10 — Declarative groundwork
 
-| ID | Tarea | Dueño | Gate |
+| ID | Task | Owner | Gate |
 |---|---|---|---|
-| B-1 | `Network.STELLAR` en `facilitators/src/types.ts` | S | Compila |
-| B-2 | `USDC_STELLAR_TOKEN` — **7 decimales, no 6** | S | Compila |
-| B-3 | Facilitator `openzeppelin.ts` + bloque Stellar en `coinbase.ts` + export | S | Aparece en la lista |
-| B-4 | `Chain.STELLAR` + labels + icons + `CHAIN_ID: 0` | S | `pnpm build` verde |
-| B-5 | `EvmChain = Exclude<Chain, Chain.SOLANA \| Chain.STELLAR>` + los ~4 sitios | S | `tsc` limpio |
-| B-6 | **Separar `WALLET_CHAINS` de `SUPPORTED_CHAINS`** | S | La wallet sigue funcionando sin Stellar |
-| B-7 | **Fix `normalizeAddress`: preservar case en Stellar** | S | `G…` sobrevive el round-trip |
-| B-8 | `stellar.png` en `apps/scan/public/` | I | El ícono renderiza |
-| B-9 | **Documento de atribución de MPP — borrador** | **I** | Completo |
+| B-1 | `Network.STELLAR` in `facilitators/src/types.ts` | S | Compiles |
+| B-2 | `USDC_STELLAR_TOKEN` — **7 decimals, not 6** | S | Compiles |
+| B-3 | `openzeppelin.ts` facilitator + Stellar block in `coinbase.ts` + export | S | Shows up in the list |
+| B-4 | `Chain.STELLAR` + labels + icons + `CHAIN_ID: 0` | S | `pnpm build` green |
+| B-5 | `EvmChain = Exclude<Chain, Chain.SOLANA \| Chain.STELLAR>` + the ~4 call sites | S | `tsc` clean |
+| B-6 | **Split `WALLET_CHAINS` from `SUPPORTED_CHAINS`** | S | Wallet still works, without Stellar |
+| B-7 | **Fix `normalizeAddress`: preserve case for Stellar** | S | `G…` survives the round-trip |
+| B-8 | `stellar.png` in `apps/scan/public/` | I | Icon renders |
+| B-9 | **`docs/MPP-ATTRIBUTION.md`: close the `<!-- VERIFY -->` markers** — `one-way-channel` contract, Charge mode has no intermediary, sources | **I** | No open markers |
 
-### C · Hora 10–20 — El adaptador
+### C · Hour 10–20 — The adapter
 
-| ID | Tarea | Dueño | Gate |
+| ID | Task | Owner | Gate |
 |---|---|---|---|
-| C-1 | `chains/stellar/hubble/query.ts` — `buildQuery` con el SQL de A-3 | S | Se ejecuta contra Hubble |
-| C-2 | `chains/stellar/hubble/config.ts` — `SyncConfig`, `QueryProvider.BIGQUERY` | S | El sync arranca |
-| C-3 | `transformResponse` → `TransferEventData`, decimales a 7 | S | Tipos correctos |
-| C-4 | `FACILITATORS_BY_CHAIN(Network.STELLAR)` | S | El sync resuelve direcciones |
-| C-5 | **Correr el sync** | S | **★ ≥1 fila con `chain = 'stellar'`** (RF-02) |
-| C-6 | **Verificación cruzada contra stellar.expert** | **I** | Monto, hash y direcciones coinciden |
-| C-7 | Generar tráfico x402 en testnet | I + S | ≥10 transacciones propias indexadas |
+| C-1 | `chains/stellar/hubble/query.ts` — `buildQuery` with A-3's SQL | S | Executes against Hubble |
+| C-2 | `chains/stellar/hubble/config.ts` — `SyncConfig`, `QueryProvider.BIGQUERY` | S | Sync starts |
+| C-3 | `transformResponse` → `TransferEventData`, 7 decimals | S | Types correct |
+| C-4 | `FACILITATORS_BY_CHAIN(Network.STELLAR)` | S | Sync resolves addresses |
+| C-5 | **Run the sync** | S | **★ ≥1 row with `chain = 'stellar'`** (RF-02) |
+| C-6 | **Cross-check against stellar.expert** | **I** | Amount, hash and addresses match |
+| C-7 | Generate x402 traffic on testnet | I + S | ≥10 self-generated transactions indexed |
 
-**C-5 es el gate del proyecto.** Si a H+20 no hay una fila, se ejecuta el fallback sin debatir.
+**C-5 is the project gate.** If there's no row by H+20, the fallback fires — no debate.
 
-**C-6 es donde el perfil de I paga:** verificar que los números son *correctos*, no solo que existen. Un dashboard con montos mal escalados por el error de 7-vs-6 decimales es peor que uno vacío — y es el error más probable del sprint.
+**C-6 is where I's profile pays off:** verifying the numbers are *correct*, not just that they exist. A dashboard with amounts mis-scaled by the 7-vs-6 decimals bug is worse than an empty one — and it's the single most likely error of the sprint.
 
-### D · Hora 20–28 — Frontend visible
+### D · Hour 20–28 — Visible frontend
 
-| ID | Tarea | Dueño | RF |
+| ID | Task | Owner | RF |
 |---|---|---|---|
-| D-1 | Stellar en el selector del navbar | S | RF-01 |
+| D-1 | Stellar in the navbar chain selector | S | RF-01 |
 | D-2 | `tx_hash` → stellar.expert | S | RF-04 |
-| D-3 | Formateo/truncado de `G…` y `C…` · filtro por cadena | S | RF-08 |
+| D-3 | `G…`/`C…` formatting and truncation · chain filter | S | RF-08 |
 | D-4 | `chain-mapping.ts` — CAIP-2 `stellar:pubnet` / `stellar:testnet` | S | RF-08 |
-| D-5 | Facilitator de Stellar con estadísticas | S | RF-07 |
-| D-6 | **QA de dashboard** con Stellar y con "todas las cadenas" | **I** | RF-03 |
+| D-5 | Stellar facilitator with stats | S | RF-07 |
+| D-6 | **Dashboard QA** with Stellar and with "all chains" | **I** | RF-03 |
 
-*D-6, el caso que rompe:* agregaciones que suman montos de 6 y 7 decimales sin normalizar.
+*D-6, the case that breaks:* aggregations summing 6- and 7-decimal amounts without normalizing.
 
-### E · Hora 28–34 — Entrega
+### E · Hour 28–34 — Delivery
 
-| ID | Tarea | Dueño | RF |
+| ID | Task | Owner | RF |
 |---|---|---|---|
-| E-1 | README del fork: qué se añadió, por qué, cómo correrlo | I | — |
-| E-2 | Documento de atribución de MPP — final | I | RF-05 |
-| E-3 | Video demo (~3 min) | I | — |
-| E-4 | **PR upstream** — se abre en draft apenas pasa C-5 | S + I | RF-06 |
-| E-5 | Limpieza de diff: sin secretos, sin `console.log`, commits legibles | S | — |
-| E-6 | Submission enviada | I | — |
+| E-1 | Fill in `README-FORK.draft.md` → fork's `README.md` | I | — |
+| E-2 | Fill in `docs/MPP-ATTRIBUTION.md` — final, with sources | I | RF-05 |
+| E-3 | Fill in `docs/STELLAR.md` — final query and env vars | S | — |
+| E-4 | Demo video (~3 min) | I | — |
+| E-5 | **Upstream PR** — opened as draft as soon as C-5 passes | S + I | RF-06 |
+| E-6 | Diff cleanup: no secrets, no `console.log`, readable commits | S | — |
+| E-7 | Submission sent | I | — |
+| E-8 | Separate PR fixing upstream's stale README *(optional, 10 min)* | S | — |
 
-**E-4 no se deja para el final.** Un PR en draft desde la hora 20 es evidencia de contribución; uno abierto a las 23:50 parece apurado.
+**E-5 is not left for the end.** A draft PR from hour 20 is evidence of contribution; one opened at 11:50pm looks rushed.
 
----
+**E-8** — upstream's README describes `scan/`/`sync/`/`facilitators/` workspaces that no longer exist, and its link to `facilitators/config.ts` 404s. A three-line PR, separate from the main one. It opens a conversation with the maintainers before the big one lands.
 
-## Ruta crítica
+### Documents: destination and status
 
-```
-S:  A-1 A-2 ── A-5 ── B-1..B-7 ── C-1..C-4 ── C-5 ★ ── D-1..D-5 ── E-4 E-5
-                                     ▲
-                                     │ SQL validado
-I:  A-3 ── A-4 ─────────────────────┘  B-9 ── C-6 ── C-7 ── D-6 ── E-1 E-2 E-3 E-6
-```
+The skeletons already exist. E-1/E-2/E-3 are filling in `<!-- TODO -->` markers, not writing from scratch.
 
-**Solo hay tres dependencias reales:** C-1 ← A-3 · C-4 ← A-4 · D-6 ← C-5.
-Todo lo demás de I es independiente. Si S se atasca 4h en el entorno, I no pierde tiempo.
-
-**Sueño desfasado:** S duerme en el tramo 20–26 (tras C-5). I duerme en el tramo 10–16 (tras entregar el SQL).
-
----
-
-## Escalera de fallbacks
-
-**Cada fallback tiene hora de disparo. Si llega la hora, se ejecuta sin debatir.**
-
-| Si falla | Disparo | Fallback |
+| File | Goes upstream? | Audience |
 |---|---|---|
-| Hubble no expone eventos SAC | **H+4** | RPC de Soroban `getEvents`, ventana 24h. ~3h extra. Se declara: histórico limitado por retención de RPC |
-| Sin direcciones de facilitator | **H+6** | Desplegar facilitator propio en testnet (OZ Relayer) o usar Coinbase testnet. La dirección la controlamos → deja de ser bloqueante |
-| La cascada de tipos desborda | **H+12** | Aislar Stellar en el pipeline de sync + vista dedicada `/stellar`, sin tocar componentes compartidos. Cumple RF-02/03/04 |
-| Sin volumen real de x402 | **H+20** | C-7: generar el tráfico nosotros. **Etiquetado como datos de demostración** en UI y README |
-| El sync no escribe ni una fila | **H+24** | Inserción manual verificada, adaptador igual en el PR, documentando explícitamente que el sync automatizado quedó sin validar |
-| Todo lo técnico se cae | **H+30** | Entregar el documento de atribución + cambios declarativos en el PR. Sigue siendo contribución real |
+| `docs/STELLAR.md` | Yes | Merit maintainers |
+| `docs/MPP-ATTRIBUTION.md` | Yes | Merit + SDF + judges |
+| `README-FORK.draft.md` → `README.md` | **No** | Judges |
 
-**Sobre el fallback de H+24:** existe como red, no como plan. Si se usa, el README y la demo lo dicen con todas las letras. Presentar datos insertados a mano como indexación funcionando es la única forma de convertir un proyecto honesto en uno descalificable.
+The attribution finding going *inside* the PR is what turns it from a code drop into a contribution with judgment behind it.
+
+**Honesty rule:** no `<!-- TODO -->` gets deleted without verifying it. The README's "Data status" block is mandatory — if C-5 ended in a fallback, it says so there.
+
+### Branching tactic *(decide before the first commit)*
+
+- Work on `feat/stellar-support`, branched from upstream `main`. That's what gets PR'd.
+- The fork README commit goes **only** to the fork's `main`, never to the PR branch.
+
+Mix them and you're cherry-picking at hour 33 on no sleep.
+
+---
+
+## Critical path
+
+```
+S:  A-1 A-2 ── A-5 ── B-1..B-7 ── C-1..C-4 ── C-5 ★ ── D-1..D-5 ── E-3 E-5 E-6
+                                     ▲
+                                     │ validated SQL
+I:  A-3 ── A-4 ─────────────────────┘  B-9 ── C-6 ── C-7 ── D-6 ── E-1 E-2 E-4 E-7
+```
+
+**There are only three real dependencies:** C-1 ← A-3 · C-4 ← A-4 · D-6 ← C-5.
+Everything else on I's track is independent of S. If S loses 4 hours to environment setup, I loses nothing.
+
+**Staggered sleep:** S sleeps in the 20–26 stretch (after C-5). I sleeps in the 10–16 stretch (after handing over the SQL).
+
+---
+
+## Fallback ladder
+
+**Every fallback has a trigger time. When the time comes, it fires — no debate.**
+
+| If this fails | Trigger | Fallback |
+|---|---|---|
+| Hubble doesn't expose SAC events | **H+4** | Soroban RPC `getEvents`, 24h window. ~3h extra. Stated plainly: history limited by RPC retention |
+| No facilitator addresses | **H+6** | Deploy our own testnet facilitator (OZ Relayer) or use Coinbase testnet. We control the address → no longer a blocker |
+| The type cascade overflows | **H+12** | Isolate Stellar in the sync pipeline + a dedicated `/stellar` view, without touching shared components. Satisfies RF-02/03/04 |
+| No real x402 volume | **H+20** | C-7: generate the traffic ourselves. **Labeled as demonstration data** in the UI and README |
+| The sync writes no rows at all | **H+24** | Manual verified insertion, adapter still shipped in the PR, explicitly documenting that the automated sync went unvalidated |
+| Everything technical collapses | **H+30** | Ship the attribution document + the declarative changes in the PR. Still a real contribution |
+
+**On the H+24 fallback:** it exists as a safety net, not as a plan. If it's used, the README and the demo say so in plain words. Presenting hand-inserted rows as working indexing is the one move that turns an honest project into a disqualifiable one.
 
 ---
 
 ## Definition of Done
 
-- `pnpm build` y `tsc` sin errores nuevos
-- Commiteado con mensaje descriptivo
-- Si toca datos: verificado contra stellar.expert por I
-- Si toca UI: probado con Stellar **y** con la cadena por defecto — no romper Base/Solana
+- `pnpm build` and `tsc` with no new errors
+- Committed with a descriptive message
+- If it touches data: cross-checked against stellar.expert by I
+- If it touches UI: tested with Stellar **and** with the default chain — don't break Base/Solana
 
 ---
 
-## Checklist de submission
+## Submission checklist
 
-- [ ] RF-01 · Stellar en el selector
-- [ ] RF-02 · ≥1 fila `chain = 'stellar'` de facilitator real
-- [ ] RF-03 · Dashboard con métricas verificadas
-- [ ] RF-04 · Hash enlazando a stellar.expert
-- [ ] RF-05 · Documento de atribución de MPP
-- [ ] RF-06 · **PR abierto contra `Merit-Systems/x402scan`**
-- [ ] README del fork · repo público · video demo
-- [ ] Datos de demostración etiquetados como tales, si los hay
-- [ ] Atribución Apache 2.0 preservada · sin secretos en el diff
+- [ ] RF-01 · Stellar in the selector
+- [ ] RF-02 · ≥1 `chain = 'stellar'` row from a real facilitator
+- [ ] RF-03 · Dashboard with verified metrics
+- [ ] RF-04 · Hash linking to stellar.expert
+- [ ] RF-05 · MPP attribution document
+- [ ] RF-06 · **PR opened against `Merit-Systems/x402scan`**
+- [ ] Fork README · public repo · demo video
+- [ ] Demonstration data labeled as such, if any
+- [ ] Apache 2.0 attribution preserved · no secrets in the diff
