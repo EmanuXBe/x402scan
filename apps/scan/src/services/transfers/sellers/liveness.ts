@@ -2,6 +2,7 @@ import z from 'zod';
 import { Prisma } from '@x402scan/transfers-db';
 
 import { baseQuerySchema } from '../schemas';
+import { mixedAddressSchema } from '@/lib/schemas';
 import { createCachedArrayQuery, createStandardCacheKey } from '@/lib/cache';
 import { queryRaw } from '@/services/transfers/client';
 
@@ -10,7 +11,9 @@ export const sellerLivenessInputSchema = baseQuerySchema
   .extend({ limit: z.number().min(1).max(200).default(25) });
 
 const rowSchema = z.object({
-  recipient: z.string(),
+  // Not z.string(): the Seller component takes a MixedAddress, and typing the
+  // column loosely here would push a cast into the UI instead.
+  recipient: mixedAddressSchema,
   payments: z.number(),
   volume: z.number(),
   unique_buyers: z.number(),
