@@ -20,6 +20,7 @@ interface SorobanTransferRow {
   /** Horizon renders Stellar amounts in human units, e.g. "0.0010000". */
   rawAmount: string;
   transactionFrom: string;
+  logIndex: number;
 }
 
 /**
@@ -64,6 +65,9 @@ export function transformResponse(
       provider: 'horizon',
       decimals,
       facilitator_id: facilitator.id,
+      // Required for the (tx_hash, log_index, chain, block_timestamp) unique
+      // index to actually deduplicate — Postgres treats NULLs as distinct.
+      log_index: row.logIndex,
     };
   });
 }

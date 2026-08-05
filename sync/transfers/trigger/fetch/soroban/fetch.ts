@@ -53,6 +53,16 @@ interface SorobanTransferRow {
   to: string;
   rawAmount: string;
   transactionFrom: string;
+  /**
+   * Position of this balance change within its transaction.
+   *
+   * TransferEvent is unique on (tx_hash, log_index, chain, block_timestamp),
+   * but Postgres treats NULLs as distinct in unique indexes — so any chain that
+   * leaves log_index null loses that protection entirely and a re-run inserts
+   * duplicates silently. A single transaction can also carry several transfers,
+   * which would collide without an ordinal.
+   */
+  logIndex: number;
 }
 
 async function horizonGetOne<T>(url: string): Promise<T> {
@@ -160,13 +170,16 @@ async function fetchBySubmitter(
       continue;
     }
 
+    let logIndex = 0;
     for (const op of ops) {
       if (op.type !== 'invoke_host_function') continue;
       for (const change of op.asset_balance_changes ?? []) {
+        const index = logIndex++;
         if (change.type !== 'transfer') continue;
         if (change.asset_code && change.asset_code !== symbol) continue;
 
         rows.push({
+          logIndex: index,
           txHash: tx.hash,
           ledgerClosedAt: tx.created_at,
           from: change.from,
@@ -300,9 +313,11 @@ async function fetchByRecipient(
         ),
       ]);
 
+      let logIndex = 0;
       for (const op of opsBody._embedded?.records ?? []) {
         if (op.type !== 'invoke_host_function') continue;
         for (const change of op.asset_balance_changes ?? []) {
+          const index = logIndex++;
           if (change.type !== 'transfer') continue;
           if (change.to !== service) continue;
           if (
@@ -313,6 +328,7 @@ async function fetchByRecipient(
           }
 
           rows.push({
+            logIndex: index,
             txHash: hash,
             ledgerClosedAt: tx.created_at,
             from: change.from,
