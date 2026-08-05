@@ -19,6 +19,10 @@ import {
   getMachineProfile,
   machineProfileInputSchema,
 } from '@/services/transfers/stats/machine-profile';
+import {
+  getSellerLiveness,
+  sellerLivenessInputSchema,
+} from '@/services/transfers/sellers/liveness';
 
 // Origin-scoped variants resolve the origin's payTo addresses server-side so
 // clients never ship the full address list over the wire (large origins
@@ -36,6 +40,11 @@ export const statsRouter = createTRPCRouter({
     .input(machineProfileInputSchema)
     .query(async ({ input, ctx }) => {
       return await getMachineProfile(input, ctx);
+    }),
+  sellerLiveness: publicProcedure
+    .input(sellerLivenessInputSchema)
+    .query(async ({ input, ctx }) => {
+      return await getSellerLiveness(input, ctx);
     }),
   overall: publicProcedure
     .input(overallStatisticsMVInputSchema)
