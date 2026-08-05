@@ -1,7 +1,9 @@
 import { PrismaClient } from '../generated/prisma/client';
 import { PrismaNeon } from '@prisma/adapter-neon';
+import { PrismaPg } from '@prisma/adapter-pg';
 
 import { neon, neonConfig } from '@neondatabase/serverless';
+import { Pool } from 'pg';
 
 import { readReplicas } from './read-replicas/extension';
 
@@ -9,18 +11,52 @@ import ws from 'ws';
 
 neonConfig.webSocketConstructor = ws;
 
+// Local Postgres support: Neon's serverless driver only speaks to Neon
+// endpoints. When the connection string points at localhost, fall back to the
+// standard pg driver so the app runs without a Neon account.
+const isLocalUrl = (url: string | undefined) =>
+  !!url && /localhost|127\.0\.0\.1/.test(url);
+
+const IS_LOCAL = isLocalUrl(process.env.TRANSFERS_DB_URL);
+
+type HttpQueryable = {
+  query: (query: string, params?: unknown[]) => Promise<unknown[]>;
+};
+
+const localPools = new Map<string, Pool>();
+const getLocalPool = (url: string) => {
+  const existing = localPools.get(url);
+  if (existing) return existing;
+  const pool = new Pool({ connectionString: url });
+  localPools.set(url, pool);
+  return pool;
+};
+
+// Mirrors the interface of neon()'s http client (rows array, not Result).
+const localHttpClient = (url: string): HttpQueryable => ({
+  query: async (query, params) =>
+    (await getLocalPool(url).query(query, params as unknown[])).rows,
+});
+
+const createAdapter = (url: string) =>
+  IS_LOCAL
+    ? new PrismaPg(getLocalPool(url))
+    : new PrismaNeon({ connectionString: url });
+
 const globalForPrisma = global as unknown as {
   transfersDb: PrismaClient;
-  transfersDbAdapter: PrismaNeon;
+  transfersDbAdapter: PrismaNeon | PrismaPg;
 };
 
 const transfersDbAdapter =
   globalForPrisma.transfersDbAdapter ||
-  new PrismaNeon({ connectionString: process.env.TRANSFERS_DB_URL! });
+  createAdapter(process.env.TRANSFERS_DB_URL!);
 if (process.env.NODE_ENV !== 'production')
   globalForPrisma.transfersDbAdapter = transfersDbAdapter;
 
-export const transfersHttpPrimary = neon(process.env.TRANSFERS_DB_URL!);
+export const transfersHttpPrimary: HttpQueryable = IS_LOCAL
+  ? localHttpClient(process.env.TRANSFERS_DB_URL!)
+  : neon(process.env.TRANSFERS_DB_URL!);
 
 const replicaUrls = [
   process.env.TRANSFERS_DB_URL_REPLICA_1,
@@ -30,7 +66,9 @@ const replicaUrls = [
   process.env.TRANSFERS_DB_URL_REPLICA_5,
 ].filter((url): url is string => !!url);
 
-export const transfersHttpReplicas = replicaUrls.map(url => neon(url));
+export const transfersHttpReplicas: HttpQueryable[] = replicaUrls.map(url =>
+  isLocalUrl(url) ? localHttpClient(url) : neon(url)
+);
 
 export const transfersDb =
   globalForPrisma.transfersDb ||
@@ -38,39 +76,20 @@ export const transfersDb =
     adapter: transfersDbAdapter,
   });
 
-const hasReplicas =
-  process.env.TRANSFERS_DB_URL_REPLICA_1 !== undefined ||
-  process.env.TRANSFERS_DB_URL_REPLICA_2 !== undefined ||
-  process.env.TRANSFERS_DB_URL_REPLICA_3 !== undefined ||
-  process.env.TRANSFERS_DB_URL_REPLICA_4 !== undefined ||
-  process.env.TRANSFERS_DB_URL_REPLICA_5 !== undefined;
+const hasReplicas = replicaUrls.length > 0;
 
 const createReplicaClient = (url: string) => {
   return new PrismaClient({
-    adapter: new PrismaNeon({ connectionString: url }),
+    adapter: isLocalUrl(url)
+      ? new PrismaPg(getLocalPool(url))
+      : new PrismaNeon({ connectionString: url }),
   });
 };
 
 export const transfersDbReadReplicas = hasReplicas
   ? transfersDb.$extends(
       readReplicas({
-        replicas: [
-          ...(process.env.TRANSFERS_DB_URL_REPLICA_1
-            ? [createReplicaClient(process.env.TRANSFERS_DB_URL_REPLICA_1)]
-            : []),
-          ...(process.env.TRANSFERS_DB_URL_REPLICA_2
-            ? [createReplicaClient(process.env.TRANSFERS_DB_URL_REPLICA_2)]
-            : []),
-          ...(process.env.TRANSFERS_DB_URL_REPLICA_3
-            ? [createReplicaClient(process.env.TRANSFERS_DB_URL_REPLICA_3)]
-            : []),
-          ...(process.env.TRANSFERS_DB_URL_REPLICA_4
-            ? [createReplicaClient(process.env.TRANSFERS_DB_URL_REPLICA_4)]
-            : []),
-          ...(process.env.TRANSFERS_DB_URL_REPLICA_5
-            ? [createReplicaClient(process.env.TRANSFERS_DB_URL_REPLICA_5)]
-            : []),
-        ],
+        replicas: replicaUrls.map(url => createReplicaClient(url)),
       })
     )
   : undefined;

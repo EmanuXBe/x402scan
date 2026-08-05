@@ -35,7 +35,12 @@ export const createWagmiConfig = () => {
     transports: {
       [base.id]: http(env.NEXT_PUBLIC_BASE_RPC_URL),
     },
-    connectors: isServer ? [injected()] : [injected(), createCDPConnector()],
+    // The CDP embedded-wallet connector throws without a real project ID.
+    // Local dev without a CDP account still gets the injected connector.
+    connectors:
+      isServer || !env.NEXT_PUBLIC_CDP_PROJECT_ID
+        ? [injected()]
+        : [injected(), createCDPConnector()],
     ssr: true,
   });
 };
