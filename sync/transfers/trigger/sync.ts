@@ -109,7 +109,12 @@ async function getOrCreateTransferSyncState(
   return { key, state };
 }
 
-async function syncFacilitator(
+/**
+ * Sync one facilitator for one chain. Exported so a chain adapter can be run
+ * once from the command line (see scripts/run-chain-sync.ts) without a
+ * trigger.dev project — the scheduled tasks below are the only other caller.
+ */
+export async function syncFacilitator(
   syncConfig: SyncConfig,
   facilitator: Facilitator,
   now: Date
