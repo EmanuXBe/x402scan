@@ -15,6 +15,10 @@ import {
   bucketedStatisticsMVInputSchema,
 } from '@/services/transfers/stats/bucketed-mv';
 import { getOriginPayToAddresses } from '@/services/db/resources/origin';
+import {
+  getMachineProfile,
+  machineProfileInputSchema,
+} from '@/services/transfers/stats/machine-profile';
 
 // Origin-scoped variants resolve the origin's payTo addresses server-side so
 // clients never ship the full address list over the wire (large origins
@@ -28,6 +32,11 @@ const bucketedByOriginInputSchema = bucketedStatisticsMVInputSchema
   .extend({ originId: z.uuid() });
 
 export const statsRouter = createTRPCRouter({
+  machineProfile: publicProcedure
+    .input(machineProfileInputSchema)
+    .query(async ({ input, ctx }) => {
+      return await getMachineProfile(input, ctx);
+    }),
   overall: publicProcedure
     .input(overallStatisticsMVInputSchema)
     .query(async ({ input, ctx }) => {
