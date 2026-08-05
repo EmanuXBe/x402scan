@@ -41,10 +41,14 @@ export enum QueryProvider {
   BITQUERY = 'bitquery',
   BIGQUERY = 'bigquery',
   CDP = 'cdp',
-  // Stellar: Soroban RPC getEvents. Needs no credentials, but the public
-  // endpoints only retain ~24h of history. Hubble (BigQuery) is the option for
-  // deep history — see docs/STELLAR.md.
-  SOROBAN_RPC = 'soroban-rpc',
+  // Stellar: Horizon REST, which needs no credentials and keeps full history.
+  // The recipient-anchored path additionally calls Soroban RPC `getEvents` to
+  // shortlist candidate transactions, but Horizon is what resolves and serves
+  // every row, so that is what the stored provider records. Public RPC retains
+  // only days of events (read it from `getHealth`, don't assume); Hubble
+  // (BigQuery) is the option for deep recipient-side history — see
+  // docs/STELLAR.md.
+  HORIZON = 'horizon',
 }
 
 interface BaseQueryConfig {

@@ -17,7 +17,7 @@ Landed:
 - `StellarAddress` branded type + `stellarAddressSchema` (`/^[GC][A-Z2-7]{55}$/`).
 - `normalizeAddress` case-sensitivity fix (B-7).
 - Prisma `AcceptsNetwork` + `stellar`/`stellar_testnet`, migration applied.
-- **`QueryProvider.SOROBAN_RPC`** + `fetch/soroban/fetch.ts` + `chains/stellar/soroban/{config,query,sync}.ts`.
+- **`QueryProvider.HORIZON`** + `fetch/soroban/fetch.ts` + `chains/stellar/soroban/{config,query,sync}.ts`.
 
 **Data-source decision (supersedes the Hubble-first plan):** Hubble needs Google Cloud credentials we don't have, and it only covers **mainnet**. Soroban RPC `getEvents` needs **no credentials**, and a probe against mainnet decoded **2,399 USDC SAC transfers in ~22h, 43% of them ≤1 USDC**. Since our own demo traffic will be on testnet — which Hubble does not cover at all — RPC is the correct primary source. Hubble stays documented as the deep-history path.
 

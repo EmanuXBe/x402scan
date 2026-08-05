@@ -10,11 +10,11 @@ How x402 payment indexing works on Stellar, for whoever has to maintain or exten
 
 Stellar comes in through the same three extension points as Solana:
 
-| Layer | Files |
-|---|---|
+| Layer                | Files                                                                                         |
+| -------------------- | --------------------------------------------------------------------------------------------- |
 | Facilitator registry | `packages/external/facilitators/src/` — `Network.STELLAR`, `USDC_STELLAR_TOKEN`, facilitators |
-| Sync adapter | `sync/transfers/trigger/chains/stellar/hubble/` — `config.ts`, `query.ts` |
-| Frontend | `apps/scan/src/types/chain.ts` — `Chain.STELLAR` |
+| Sync adapter         | `sync/transfers/trigger/chains/stellar/soroban/` — `config.ts`, `query.ts`, `sync.ts`         |
+| Frontend             | `apps/scan/src/types/chain.ts` — `Chain.STELLAR`                                              |
 
 **No database migrations were needed.** The `TransferEvent` model was already chain-agnostic: `chain` and `provider` are free text, there are no `Bytes` types or fixed lengths, and Stellar's `G…`/`C…` addresses and 64-character hashes fit unchanged.
 
@@ -29,7 +29,10 @@ The second filter is the non-obvious one. **A SAC mirrors its classic asset, so 
 
 Horizon is the source rather than Soroban RPC for two reasons:
 
-- **Retention.** RPC `getEvents` keeps ~24h, and `getTransaction` far less — a scan of 4,012 transactions resolved only **61** source accounts. Horizon keeps full history.
+- **Retention.** RPC `getEvents` keeps days, not months, and `getTransaction` far less — a scan of 4,012 transactions resolved only **61** source accounts. Horizon keeps full history.
+
+  Don't assume the retention figure. `getHealth` reports it exactly, and the widely repeated "24 hours" is wrong for the public endpoint: on 2026-08-05 `mainnet.sorobanrpc.com` returned `ledgerRetentionWindow: 120960` — 120,960 ledgers at ~5s, or **7 days**. Read it at runtime and clamp `startLedger` to `oldestLedger`; a hardcoded assumption is either wasteful or an error.
+
 - **No XDR handling.** Horizon returns `asset_balance_changes` already decoded, with `from`, `to` and a human-unit `amount`, plus `source_account` and `fee_account` as plain fields.
 
 The query is facilitator-first — walk `/accounts/{relayer}/transactions` and pull operations — which matches how the rest of x402scan attributes payments.
@@ -56,7 +59,7 @@ It returns the columns of `TransferEventData`: `tx_hash`, `sender`, `recipient`,
 
 ### Alternative considered
 
-Soroban RPC (`getEvents`) works for recent data but has a 24-hour default retention — up to 7 days on private instances. Not enough for history.
+Soroban RPC (`getEvents`) works for recent data, but its retention window is measured in days — 7 on `mainnet.sorobanrpc.com` as of 2026-08-05, and configurable per instance. Not enough for history, whatever the exact figure: query `getHealth` rather than trusting a constant.
 
 <!-- TODO: if RPC ended up being used as the fallback, invert this section and
      explain the retention limitation -->
@@ -108,7 +111,7 @@ Upstream assumes Neon + CDP + Stripe. This fork runs fully local:
 - **Transfers DB**: requires **TimescaleDB** — the dashboard's analytics are Timescale materialized views, all keyed by `(facilitator_id, chain)`. Run `docker run -d --name x402-timescale -p 5433:5432 -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=x402scan_transfers timescale/timescaledb:latest-pg17`.
 - **FDW migration**: `20260105150207_fdw_payto_origin_map` hardcodes upstream's production Neon host. Before `migrate deploy`, pre-create the `x402scan_server` foreign server pointing at your local scan DB (`host.docker.internal` from the container) and pre-import `Accepts` + `Resources` with `IMPORT FOREIGN SCHEMA … LIMIT TO` — the migration's `IF NOT EXISTS` guards then skip its own hardcoded setup. (A full-schema import also fails on enums newer than the migration.)
 - **Redis** (optional but wanted): without it every dashboard query re-runs per request and tab switches take ~600ms. `docker run -d --name x402-redis -p 6379:6379 redis:7-alpine`, then set `REDIS_URL=redis://localhost:6379`. Warm pages drop to ~50ms.
-  - **Upstream bug:** `REDIS_DISABLE: z.coerce.boolean()` in `apps/scan/src/env.ts` — `Boolean("false") === true`, so writing `REDIS_DISABLE=false` *disables* Redis. Omit the var entirely, or fix the schema to parse the string. Worth a small upstream PR.
+  - **Upstream bug:** `REDIS_DISABLE: z.coerce.boolean()` in `apps/scan/src/env.ts` — `Boolean("false") === true`, so writing `REDIS_DISABLE=false` _disables_ Redis. Omit the var entirely, or fix the schema to parse the string. Worth a small upstream PR.
 - **Wallet contexts**: the CDP embedded-wallet connector and hooks SDK both require a real project ID at runtime even though `env.ts` marks it optional. `_contexts/wagmi/config.ts` now registers the CDP connector only when the ID is present, and `_contexts/cdp/config.ts` falls back to a placeholder UUID so the SDK initializes. The provider must stay mounted — skipping it breaks every `useCDP` consumer.
 - **Env**: CDP/Stripe values can be dummies — they're only exercised by wallet/payment surfaces. `NEXT_PUBLIC_PROXY_URL` can point at the production proxy. `NEXT_PUBLIC_NODE_ENV=development` must be set explicitly or the `CRON_SECRET` conditional in `env.ts` makes it required.
 

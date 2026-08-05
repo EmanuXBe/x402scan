@@ -38,7 +38,7 @@ export function buildQuery(
 
 export function transformResponse(
   data: unknown,
-  _config: SyncConfig,
+  config: SyncConfig,
   facilitator: Facilitator,
   facilitatorConfig: FacilitatorConfig
 ): TransferEventData[] {
@@ -61,8 +61,13 @@ export function transformResponse(
       amount: Math.round(human * USDC_MULTIPLIER),
       block_timestamp: new Date(row.ledgerClosedAt),
       tx_hash: row.txHash,
-      chain: 'stellar',
-      provider: 'horizon',
+      chain: config.chain,
+      // Must be config.provider, not a literal. The incremental cursor asks for
+      // the most recent transfer matching (chain, transaction_from, provider);
+      // a provider string that disagrees with the SyncConfig makes that lookup
+      // return nothing forever, so every scheduled run restarts at the
+      // facilitator's syncStartDate instead of resuming.
+      provider: config.provider,
       decimals,
       facilitator_id: facilitator.id,
       // Required for the (tx_hash, log_index, chain, block_timestamp) unique

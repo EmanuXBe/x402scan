@@ -166,7 +166,11 @@ async function fetchBySubmitter(
       );
       ops = body._embedded?.records ?? [];
     } catch (error) {
-      logger.warn(`[${config.chain}] operations fetch failed for ${tx.hash}`);
+      // Skipping here silently drops real payments, so say which transaction
+      // and why — a rate-limited Horizon looks identical to an empty result.
+      logger.warn(
+        `[${config.chain}] operations fetch failed for ${tx.hash}: ${String(error)}`
+      );
       continue;
     }
 
@@ -240,7 +244,8 @@ async function sorobanRpc<T>(
  * history from one paginated query — but it does NOT index contract transfers
  * by receiving account, and `/accounts/{id}/payments` returns nothing for them.
  * The only way to find "everything paid to this service" is to scan contract
- * events, which the public RPC retains for about 24 hours.
+ * events, which the public RPC retains for days rather than months — the exact
+ * window is reported by `getHealth` and must be read, not assumed.
  *
  * The practical consequence is that submitter-anchored protocols are cheap to
  * index and recipient-anchored ones are not. See docs/MPP-ATTRIBUTION.md.
@@ -257,15 +262,39 @@ async function fetchByRecipient(
   const service = facilitatorConfig.address;
   const sac = facilitatorConfig.token.address;
 
-  const latest = await sorobanRpc<{ sequence: number }>(
-    rpcUrl,
-    'getLatestLedger'
-  );
+  const health = await sorobanRpc<{
+    latestLedger: number;
+    oldestLedger: number;
+  }>(rpcUrl, 'getHealth');
+
   const secondsBack = Math.max(0, (now.getTime() - since.getTime()) / 1000);
-  const startLedger = Math.max(
+  const requestedStart = Math.max(
     1,
-    latest.sequence - Math.ceil(secondsBack / LEDGER_SECONDS)
+    health.latestLedger - Math.ceil(secondsBack / LEDGER_SECONDS)
   );
+
+  // getEvents rejects a startLedger outside the node's retention window, so the
+  // request has to be clamped rather than derived from the sync window alone.
+  // The two Stellar anchors are bounded by opposite things: the submitter path
+  // wants windows as wide as possible because Horizon keeps full history, while
+  // this path can never see further back than the RPC retains (7 days on
+  // mainnet.sorobanrpc.com as of 2026-08-05, per its own `ledgerRetentionWindow`
+  // — but that is a node setting, hence the runtime read). A clamp is not a fix
+  // for that gap — history older than
+  // oldestLedger is simply unobservable here, and needs Hubble or a Galexie
+  // data lake. See docs/MPP-ATTRIBUTION.md.
+  const startLedger = Math.max(requestedStart, health.oldestLedger);
+
+  if (startLedger > requestedStart) {
+    const missedLedgers = startLedger - requestedStart;
+    logger.warn(
+      `[${config.chain}] recipient anchor ${service}: requested ledger ` +
+        `${requestedStart} predates RPC retention (oldest ${health.oldestLedger}); ` +
+        `${missedLedgers} ledgers (~${Math.round(
+          (missedLedgers * LEDGER_SECONDS) / 3600
+        )}h) of this window cannot be observed`
+    );
+  }
 
   logger.log(
     `[${config.chain}] recipient anchor ${service}: scanning events from ledger ${startLedger}`
@@ -305,9 +334,7 @@ async function fetchByRecipient(
   for (const hash of candidateHashes) {
     try {
       const [tx, opsBody] = await Promise.all([
-        horizonGetOne<HorizonTransaction>(
-          `${horizonUrl}/transactions/${hash}`
-        ),
+        horizonGetOne<HorizonTransaction>(`${horizonUrl}/transactions/${hash}`),
         horizonGet<HorizonOperation>(
           `${horizonUrl}/transactions/${hash}/operations?limit=${PAGE_LIMIT}`
         ),

@@ -109,7 +109,7 @@ async function fetchWithWindow(
         0
       );
     }
-    if (provider === QueryProvider.SOROBAN_RPC) {
+    if (provider === QueryProvider.HORIZON) {
       results = await fetchSorobanRpc(
         config,
         facilitator,
