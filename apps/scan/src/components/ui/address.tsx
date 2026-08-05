@@ -5,6 +5,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
 import { Copyable } from './copyable';
 
 import { addressTextClassName, cn, formatAddress } from '@/lib/utils';
+import { explorerAccountUrl, explorerTxUrl } from '@/lib/explorer';
 
 interface Props {
   address: string;
@@ -13,6 +14,9 @@ interface Props {
   side?: 'top' | 'bottom' | 'left' | 'right';
   disableCopy?: boolean;
   showLink?: boolean;
+  /** When set, renders the value as a link to that chain's block explorer. */
+  explorerChain?: string;
+  explorerKind?: 'tx' | 'account';
 }
 
 export const Address: React.FC<Props> = ({
@@ -21,9 +25,31 @@ export const Address: React.FC<Props> = ({
   hideTooltip,
   side,
   disableCopy,
+  explorerChain,
+  explorerKind = 'tx',
 }) => {
   const formattedAddress = formatAddress(address);
   const addressClassName = cn(addressTextClassName, 'text-xs', className);
+
+  const href = explorerChain
+    ? explorerKind === 'account'
+      ? explorerAccountUrl(explorerChain, address)
+      : explorerTxUrl(explorerChain, address)
+    : null;
+
+  if (href) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={cn(addressClassName, 'hover:underline')}
+        onClick={e => e.stopPropagation()}
+      >
+        {formattedAddress}
+      </a>
+    );
+  }
 
   if (disableCopy) {
     return <span className={addressClassName}>{formattedAddress}</span>;
