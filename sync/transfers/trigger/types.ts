@@ -1,12 +1,14 @@
-import { Network, type Token } from 'facilitators';
+import { Network, type Token, type AttributionAnchor } from 'facilitators';
 
-export { Network, type Token };
+export { Network, type Token, type AttributionAnchor };
 
 export interface FacilitatorConfig {
   address: string;
   token: Token;
   syncStartDate: Date;
   enabled: boolean;
+  /** See AttributionAnchor in the facilitators package. Defaults to submitter. */
+  anchor?: AttributionAnchor;
 }
 
 export interface Facilitator {
@@ -39,12 +41,18 @@ export enum QueryProvider {
   BITQUERY = 'bitquery',
   BIGQUERY = 'bigquery',
   CDP = 'cdp',
+  // Stellar: Soroban RPC getEvents. Needs no credentials, but the public
+  // endpoints only retain ~24h of history. Hubble (BigQuery) is the option for
+  // deep history — see docs/STELLAR.md.
+  SOROBAN_RPC = 'soroban-rpc',
 }
 
 interface BaseQueryConfig {
   chain: string;
   provider: QueryProvider;
   apiUrl?: string;
+  /** Soroban JSON-RPC endpoint, used by recipient-anchored Stellar discovery. */
+  rpcUrl?: string;
   buildQuery: (
     config: SyncConfig,
     facilitatorConfig: FacilitatorConfig,

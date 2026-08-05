@@ -9,5 +9,6 @@ export const TRANSFER_EVENT_SIG = 'Transfer(address,address,uint256)';
 export const TRANSFER_TOPIC =
   '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 
-export const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
+export const ONE_HOUR_IN_MS = 60 * 60 * 1000;
+export const ONE_DAY_IN_MS = 24 * ONE_HOUR_IN_MS;
 export const ONE_MINUTE_IN_SECONDS = 60;

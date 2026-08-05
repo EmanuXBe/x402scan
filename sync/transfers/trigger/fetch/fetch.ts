@@ -9,6 +9,7 @@ import { fetchWithOffsetPagination, fetchBitquery } from './bitquery/fetch';
 import { fetchBigQuery } from './bigquery/fetch';
 import { logger } from '@trigger.dev/sdk';
 import { fetchCDP } from './cdp/fetch';
+import { fetchSorobanRpc } from './soroban/fetch';
 
 export async function fetchTransfers(
   config: SyncConfig,
@@ -106,6 +107,15 @@ async function fetchWithWindow(
         currentStart,
         currentEnd,
         0
+      );
+    }
+    if (provider === QueryProvider.SOROBAN_RPC) {
+      results = await fetchSorobanRpc(
+        config,
+        facilitator,
+        facilitatorConfig,
+        currentStart,
+        currentEnd
       );
     }
 
