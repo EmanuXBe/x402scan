@@ -22,13 +22,19 @@ A fork of [`Merit-Systems/x402scan`](https://github.com/Merit-Systems/x402scan) 
 - Transaction links to [stellar.expert](https://stellar.expert)
 - Registered Stellar facilitators: <!-- TODO: which ones -->
 
+<!-- TODO: if the MPP Charge spike landed, add it here — and state plainly that
+     it covers ONE service we deployed, not the MPP ecosystem. The claim is
+     "MPP is indexable, here's proof", not "we index MPP". -->
+
 ## Why Stellar was missing
 
 `grep -ri "stellar|soroban"` across the upstream repository returned zero results. It wasn't for lack of activity — nobody had written the adapter.
 
-The interesting part is *why* nobody wrote it, and it's an attribution-model problem, not an engineering one. It's documented in **[docs/MPP-ATTRIBUTION.md](docs/MPP-ATTRIBUTION.md)**: x402 on Stellar is indexable because facilitators have identifiable addresses; MPP is not, because it settles direct SAC transfers with no intermediary to anchor on.
+The interesting part is *why*, and it's an attribution problem rather than an engineering one. Nothing on Stellar is hidden: every payment is a visible SAC transfer. The question is whether a protocol's payments can be **enumerated** without already knowing who's involved — and that comes down to how many anchors exist and whether anyone publishes them.
 
-That diagnosis is the main contribution of this work. The code is the consequence.
+x402 has few anchors, shared across services, publicly registered. MPP Charge has one anchor per service and no directory listing them. MPP Channel — the mode that settles *off-chain* — turns out to be the most enumerable of the three, because every channel instance shares a WASM hash.
+
+Full reasoning in **[docs/MPP-ATTRIBUTION.md](docs/MPP-ATTRIBUTION.md)**. That diagnosis is the main contribution of this work. The code is the consequence.
 
 ## Data status
 

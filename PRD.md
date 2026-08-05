@@ -17,15 +17,21 @@ x402scan's data model is already chain-agnostic. `TransferEvent` assumes EVM in 
 
 **Zero database migrations.** The work is an adapter, not a refactor.
 
-## The finding: why MPP is out of scope
+## The finding: anchors, not cryptography
 
-x402scan's attribution model identifies payments by **facilitator address**: a transfer counts as an x402 payment if a registered facilitator touched it.
+x402scan identifies payments by **facilitator address**: a transfer counts as an x402 payment if a registered facilitator touched it.
 
-For **x402 on Stellar this works** — facilitators exist with identifiable addresses (OpenZeppelin Relayer, Coinbase testnet). It's a matter of registering addresses in a structure that already exists.
+Everything on Stellar is a visible SAC transfer — nothing is hidden. The real question is whether a protocol's payments can be **enumerated** without already knowing the participants. That reduces to one property: how many anchors exist, and who publishes them.
 
-For **MPP it doesn't work**. MPP operates without an external facilitator: it settles direct SAC transfers between agent and service. With no facilitator to match against, an MPP payment is indistinguishable from any other token transfer.
+| Protocol | Anchor | How many | Published? |
+|---|---|---|---|
+| x402 | Facilitator address | Few, shared across all services | Yes |
+| MPP Charge | The service's own receiving address | One per service | **No** |
+| MPP Channel | `one-way-channel` WASM hash | **One, protocol-wide** | Derivable on-chain |
 
-The exception is session mode: the `one-way-channel` contract does have an identifiable ID, which opens attribution **by contract instead of by address**.
+This inverts the intuition. A *single* MPP service is trivially indexable — same mechanism as x402, different address. What's missing is a **directory** of MPP services, which is a coordination problem, not a technical one. And the mode that settles off-chain turns out to be the most enumerable of the three, because every channel instance shares a WASM hash.
+
+Full reasoning in [docs/MPP-ATTRIBUTION.md](docs/MPP-ATTRIBUTION.md).
 
 > This diagnosis is the project's intellectual asset. It explains something neither Merit nor SDF had documented. We present it as a finding, not as a limitation.
 
@@ -33,9 +39,11 @@ The exception is session mode: the `one-way-channel` contract does have an ident
 
 **Phase 1 (this delivery).** Stellar as a selectable chain, with x402 payments settled via facilitator indexed and visible in the explorer.
 
-**Phase 2 (post-bounty).** MPP attribution by contract ID, starting with `one-way-channel`. Session metrics: micro-calls per settlement, cost per call.
+**Conditional P2 — MPP Charge.** If RF-02 lands with time to spare, index one MPP Charge service we deploy ourselves. Proves MPP is indexable; does *not* claim ecosystem coverage, since no service directory exists. Time-boxed and gated — never at the expense of Phase 1.
 
-**Out of scope.** Embedded wallet · onramp · agent chat · resource registration · alerts · analytics · MPP coverage · full feature parity · mainnet if testnet is enough to demonstrate.
+**Phase 3 (post-bounty).** An MPP service registry. Channel discovery by WASM hash. Channel-native metrics: micro-calls per settlement, cost per call — which no explorer reports today.
+
+**Out of scope.** Embedded wallet · onramp · agent chat · resource registration · alerts · analytics · full feature parity · Base/Solana history backfill · mainnet if testnet is enough to demonstrate.
 
 ## Requirements
 
