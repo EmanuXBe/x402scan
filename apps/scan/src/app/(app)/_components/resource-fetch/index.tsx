@@ -5,16 +5,16 @@ import { cn } from '@/lib/utils';
 
 import { Chain } from '@/types/chain';
 
-import type { SupportedChain } from '@/types/chain';
+import type { WalletChain } from '@/types/chain';
 import type { UseMutationOptions } from '@tanstack/react-query';
 import type { X402FetchResponse } from '@/app/(app)/_hooks/x402/types';
 
 interface Props<TData = unknown> {
-  chains: SupportedChain[];
+  chains: WalletChain[];
   allRequiredFieldsFilled: boolean;
   maxAmountRequired: bigint;
   targetUrl: string;
-  requestInit?: RequestInit | ((chain: SupportedChain) => RequestInit);
+  requestInit?: RequestInit | ((chain: WalletChain) => RequestInit);
   options?: Omit<UseMutationOptions<X402FetchResponse<TData>>, 'mutationFn'>;
   isTool?: boolean;
   text?: string;

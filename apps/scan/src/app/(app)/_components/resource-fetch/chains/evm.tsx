@@ -14,16 +14,16 @@ import { useEvmX402FetchWithConfirmation } from '@/app/(app)/_hooks/x402/evm-wit
 import { convertTokenAmount } from '@/lib/token';
 import { usdc } from '@/lib/tokens/usdc';
 
-import type { SupportedChain } from '@/types/chain';
+import type { WalletChain } from '@/types/chain';
 import type { UseMutationOptions } from '@tanstack/react-query';
 import type { X402FetchResponse } from '@/app/(app)/_hooks/x402/types';
 
 interface Props<TData = unknown> {
-  chain: SupportedChain;
+  chain: WalletChain;
   allRequiredFieldsFilled: boolean;
   maxAmountRequired: bigint;
   targetUrl: string;
-  requestInit?: RequestInit | ((chain: SupportedChain) => RequestInit);
+  requestInit?: RequestInit | ((chain: WalletChain) => RequestInit);
   options?: Omit<UseMutationOptions<X402FetchResponse<TData>>, 'mutationFn'>;
   isTool?: boolean;
   text?: string;

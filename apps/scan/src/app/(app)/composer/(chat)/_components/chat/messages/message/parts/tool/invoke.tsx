@@ -2,11 +2,11 @@ import { ResourceFetch } from '@/app/(app)/_components/resource-fetch';
 import { Button } from '@/components/ui/button';
 import { Loading } from '@/components/ui/loading';
 import { Skeleton } from '@/components/ui/skeleton';
-import { supportedChainSchema } from '@/lib/schemas';
+import { walletChainSchema } from '@/lib/schemas';
 import { usdc } from '@/lib/tokens/usdc';
 
 import type { RouterOutputs } from '@/trpc/client';
-import type { SupportedChain } from '@/types/chain';
+import type { WalletChain } from '@/types/chain';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import type { ToolUIPart, UIMessage } from 'ai';
 import { parseUnits } from 'viem';
@@ -40,15 +40,15 @@ export const ToolInvoke: React.FC<Props> = ({
                 resource.accepts
                   .map(accept => accept.network)
                   .filter(
-                    network => supportedChainSchema.safeParse(network).success
-                  ) as SupportedChain[]
+                    network => walletChainSchema.safeParse(network).success
+                  ) as WalletChain[]
               }
               allRequiredFieldsFilled={true}
               maxAmountRequired={bigIntMax(
                 ...resource.accepts.map(accept =>
                   parseUnits(
                     accept.maxAmountRequired.toString(),
-                    usdc(accept.network as SupportedChain).decimals
+                    usdc(accept.network as WalletChain).decimals
                   )
                 )
               )}

@@ -3,7 +3,7 @@ import { TRPCError } from '@trpc/server';
 import { createTRPCRouter, protectedProcedure } from '@/trpc/trpc';
 
 import { getUserWallets } from '@/services/cdp/server-wallet/user';
-import { mixedAddressSchema, supportedChainSchema } from '@/lib/schemas';
+import { mixedAddressSchema, walletChainSchema } from '@/lib/schemas';
 import z from 'zod';
 import {
   getTokenBalanceSchema,
@@ -11,7 +11,7 @@ import {
 } from '@/services/cdp/server-wallet/wallets/schemas';
 import { tokenSchema } from '@/types/token';
 import { usdc } from '@/lib/tokens/usdc';
-import { Chain, SUPPORTED_CHAINS } from '@/types/chain';
+import { Chain, WALLET_CHAINS } from '@/types/chain';
 import {
   x402Client,
   wrapFetchWithPayment,
@@ -24,7 +24,7 @@ import type { ClientEvmSigner } from '@/lib/x402/wrap-fetch';
 import type { ClientSvmSigner } from '@x402/svm';
 
 const serverWalletChainShape = {
-  chain: supportedChainSchema,
+  chain: walletChainSchema,
 };
 
 const serverWalletChainSchema = z.object(serverWalletChainShape);
@@ -126,7 +126,7 @@ export const serverWalletRouter = createTRPCRouter({
   chainsWithBalances: protectedProcedure.query(async ({ ctx }) => {
     const { wallets } = await getUserWallets(ctx.session.user.id);
     const balanceResults = await Promise.all(
-      SUPPORTED_CHAINS.map(async chain => {
+      WALLET_CHAINS.map(async chain => {
         const result = await wallets[chain].getTokenBalance({
           token: usdc(chain),
         });
@@ -144,7 +144,7 @@ export const serverWalletRouter = createTRPCRouter({
   sendUsdc: protectedProcedure
     .input(
       z.object({
-        chain: supportedChainSchema,
+        chain: walletChainSchema,
         amount: z.number(),
         address: mixedAddressSchema,
       })

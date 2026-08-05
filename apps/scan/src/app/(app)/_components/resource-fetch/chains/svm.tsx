@@ -11,7 +11,7 @@ import { useSPLTokenBalance } from '@/app/(app)/_hooks/balance/token/use-svm-tok
 
 import { useSolanaWallet } from '@/app/_contexts/solana/hook';
 
-import type { SupportedChain } from '@/types/chain';
+import type { WalletChain } from '@/types/chain';
 import { Chain } from '@/types/chain';
 
 import { convertTokenAmount } from '@/lib/token';
@@ -24,7 +24,7 @@ interface Props<TData = unknown> {
   allRequiredFieldsFilled: boolean;
   maxAmountRequired: bigint;
   targetUrl: string;
-  requestInit?: RequestInit | ((chain: SupportedChain) => RequestInit);
+  requestInit?: RequestInit | ((chain: WalletChain) => RequestInit);
   options?: Omit<UseMutationOptions<X402FetchResponse<TData>>, 'mutationFn'>;
   isTool?: boolean;
   text?: string;
