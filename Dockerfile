@@ -38,8 +38,30 @@ RUN pnpm --filter @x402scan/app exec sh -c \
 # left unchecked — see the comment on skipValidation in apps/scan/src/env.ts.
 ENV NEXT_OUTPUT_STANDALONE=true \
     NEXT_TELEMETRY_DISABLED=1 \
-    SKIP_ENV_VALIDATION=1 \
-    NEXT_PUBLIC_NODE_ENV=production
+    SKIP_ENV_VALIDATION=1
+
+# NEXT_PUBLIC_* must be present at BUILD time, not runtime.
+#
+# Next inlines them into the client bundle while compiling, so setting them on
+# the running service is too late — the bundle already contains `undefined` and
+# the browser fails t3-env's client validation with "Invalid environment
+# variables". Nothing shows in the server logs and curl still returns 200,
+# because the page renders and only breaks once it hydrates.
+#
+# ARG rather than plain ENV so a platform can override per deployment: the app
+# URL in particular differs for every environment, and Railway passes service
+# variables to a Dockerfile build as build args.
+ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
+ARG NEXT_PUBLIC_PROXY_URL=https://proxy.x402scan.com
+ARG NEXT_PUBLIC_NODE_ENV=production
+ARG NEXT_PUBLIC_SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
+ARG NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_placeholder
+
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL \
+    NEXT_PUBLIC_PROXY_URL=$NEXT_PUBLIC_PROXY_URL \
+    NEXT_PUBLIC_NODE_ENV=$NEXT_PUBLIC_NODE_ENV \
+    NEXT_PUBLIC_SOLANA_RPC_URL=$NEXT_PUBLIC_SOLANA_RPC_URL \
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 
 # Every required server variable from apps/scan/src/env.ts, as placeholders.
 #
