@@ -5,7 +5,6 @@ import { serializeAccepts } from '@/lib/token';
 import { getOriginFromUrl } from '@/lib/url';
 
 import type { z } from 'zod';
-import type { SupportedChain } from '@/types/chain';
 
 export async function handleRegistryOrigin(
   query: z.infer<typeof registryOriginQuerySchema>
@@ -16,9 +15,7 @@ export async function handleRegistryOrigin(
     {
       where: {
         origin: { origin },
-        ...(chain
-          ? { accepts: { some: { network: chain as SupportedChain } } }
-          : {}),
+        ...(chain ? { accepts: { some: { network: chain } } } : {}),
       },
     },
     { page, page_size }
