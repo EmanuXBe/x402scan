@@ -14,6 +14,9 @@ const rowSchema = z.object({
   payments: z.number(),
   median_amount: z.number().nullable(),
   p95_amount: z.number().nullable(),
+  /** The single most common payment amount, and the share of payments at it. */
+  modal_amount: z.number().nullable(),
+  modal_share: z.number().nullable(),
   unique_buyers: z.number(),
   unique_sellers: z.number(),
   pairs: z.number(),
@@ -36,8 +39,16 @@ const rowSchema = z.object({
  * "who is registered" but "what does agent traffic actually look like here".
  *
  * Two signals distinguish machine traffic from human traffic:
- *  - median ≈ p95 amount, meaning a flat per-call price with no human variance
+ *  - a dominant modal amount, meaning a flat per-call price rather than the
+ *    spread human purchases show
  *  - a short, regular gap between a buyer's consecutive payments
+ *
+ * The modal share is measured rather than inferred from percentiles. Comparing
+ * median to p95 was the first attempt and it is the wrong test: on Stellar
+ * mainnet 90.6% of payments are exactly 0.001 USDC, yet median equals p90 and
+ * not p95, so a percentile comparison reports "not flat" about the flattest
+ * distribution available. Percentiles describe the tail; the concentration is
+ * the signal.
  */
 const getMachineProfileUncached = async (
   input: z.infer<typeof machineProfileInputSchema>
@@ -74,11 +85,20 @@ const getMachineProfileUncached = async (
         SELECT COUNT(*) AS n
         FROM scoped
         GROUP BY DATE_TRUNC('day', block_timestamp)
+      ),
+      modal AS (
+        SELECT amount, COUNT(*) AS n
+        FROM scoped
+        GROUP BY amount
+        ORDER BY n DESC, amount ASC
+        LIMIT 1
       )
       SELECT
         (SELECT COUNT(*) FROM scoped)::int AS payments,
         (SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY amount) FROM scoped)::float AS median_amount,
         (SELECT PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY amount) FROM scoped)::float AS p95_amount,
+        (SELECT amount FROM modal)::float AS modal_amount,
+        (SELECT n::float / NULLIF((SELECT COUNT(*) FROM scoped), 0) FROM modal)::float AS modal_share,
         (SELECT COUNT(DISTINCT sender) FROM scoped)::int AS unique_buyers,
         (SELECT COUNT(DISTINCT recipient) FROM scoped)::int AS unique_sellers,
         (SELECT COUNT(*) FROM (SELECT DISTINCT sender, recipient FROM scoped) p)::int AS pairs,
@@ -94,6 +114,8 @@ const getMachineProfileUncached = async (
       payments: 0,
       median_amount: null,
       p95_amount: null,
+      modal_amount: null,
+      modal_share: null,
       unique_buyers: 0,
       unique_sellers: 0,
       pairs: 0,
