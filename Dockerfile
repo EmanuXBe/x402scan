@@ -41,6 +41,21 @@ ENV NEXT_OUTPUT_STANDALONE=true \
     SKIP_ENV_VALIDATION=1 \
     NEXT_PUBLIC_NODE_ENV=production
 
+# The x402 router config throws at module evaluation if the Coinbase facilitator
+# has no CDP credentials, and Next evaluates those modules while collecting page
+# data — so skipping env validation is not enough on its own, and the build
+# fails on a route rather than on a missing variable.
+#
+# These are visibly fake and are overridden by the real runtime environment.
+# They exist so the image can be built without production credentials; the
+# surfaces that use them are Base and Solana wallet flows, which the Stellar
+# explorer never reaches.
+ENV CDP_API_KEY_ID=build-placeholder \
+    CDP_API_KEY_SECRET=build-placeholder \
+    CDP_API_KEY_NAME=build-placeholder \
+    CDP_WALLET_SECRET=build-placeholder \
+    FREE_TIER_WALLET_NAME=build-placeholder
+
 # `--filter=@x402scan/app...` (with the trailing dots) builds the app *and its
 # workspace dependencies*. facilitators and neverthrow both publish from dist/
 # rather than source, so building the app alone resolves them to nothing.
