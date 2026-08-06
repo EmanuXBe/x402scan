@@ -41,20 +41,34 @@ ENV NEXT_OUTPUT_STANDALONE=true \
     SKIP_ENV_VALIDATION=1 \
     NEXT_PUBLIC_NODE_ENV=production
 
-# The x402 router config throws at module evaluation if the Coinbase facilitator
-# has no CDP credentials, and Next evaluates those modules while collecting page
-# data — so skipping env validation is not enough on its own, and the build
-# fails on a route rather than on a missing variable.
+# Every required server variable from apps/scan/src/env.ts, as placeholders.
 #
-# These are visibly fake and are overridden by the real runtime environment.
-# They exist so the image can be built without production credentials; the
-# surfaces that use them are Base and Solana wallet flows, which the Stellar
-# explorer never reaches.
-ENV CDP_API_KEY_ID=build-placeholder \
+# Skipping env validation is necessary but not sufficient. Next evaluates route
+# modules while collecting page data, and several of them have module-scope side
+# effects that read the environment directly: the x402 router throws without CDP
+# credentials, and neon() throws without a connection string. Each one fails on
+# a route rather than on a missing variable, so chasing them individually costs
+# a four-minute build per discovery. Setting the whole set at once is cheaper
+# and does not depend on having found all of them.
+#
+# The database URLs point at localhost deliberately. That routes the db clients
+# down the pg branch, whose Pool connects lazily — the neon branch constructs
+# eagerly and would fail here. Nothing connects during a build either way.
+#
+# All of these are visibly fake and are replaced by the real runtime
+# environment, which the same schema validates again at boot.
+ENV SCAN_DATABASE_URL=postgresql://build:build@localhost:5432/build \
+    SCAN_DATABASE_URL_UNPOOLED=postgresql://build:build@localhost:5432/build \
+    TRANSFERS_DB_URL=postgresql://build:build@localhost:5432/build \
+    CDP_API_KEY_ID=build-placeholder \
     CDP_API_KEY_SECRET=build-placeholder \
     CDP_API_KEY_NAME=build-placeholder \
     CDP_WALLET_SECRET=build-placeholder \
-    FREE_TIER_WALLET_NAME=build-placeholder
+    FREE_TIER_WALLET_NAME=build-placeholder \
+    ECHO_APP_ID=build-placeholder \
+    STRIPE_SECRET_KEY=build-placeholder \
+    AUTH_SECRET=build-placeholder \
+    CRON_SECRET=build-placeholder
 
 # `--filter=@x402scan/app...` (with the trailing dots) builds the app *and its
 # workspace dependencies*. facilitators and neverthrow both publish from dist/
