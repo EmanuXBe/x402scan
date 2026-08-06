@@ -95,6 +95,8 @@
   },
   "globalEnv": [
     "TURBO_*",
+    "NEXT_OUTPUT_STANDALONE",
+    "SKIP_ENV_VALIDATION",
     "NEXT_PUBLIC_*",
     "NEXT_RUNTIME",
     "AUTH_SECRET",

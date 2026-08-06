@@ -1,67 +1,128 @@
 <!--
-DRAFT — block to prepend to the fork's README.md.
-Does NOT go upstream. See branch `feat/stellar-support`.
-Fill in the <!-- TODO --> markers with verified facts only. If a gate ended in a
-fallback, say so here. No claims about software that never ran.
+Block to prepend to the fork's README.md. Does NOT go upstream.
+All Stellar work lives on `feat/stellar-support`.
 -->
 
 # x402scan + Stellar
 
-A fork of [`Merit-Systems/x402scan`](https://github.com/Merit-Systems/x402scan) that adds **Stellar** as a first-class chain to the agentic payments explorer.
+A fork of [`Merit-Systems/x402scan`](https://github.com/Merit-Systems/x402scan)
+that adds **Stellar** as a first-class chain to the agentic payments explorer.
 
 **Stellar Summit São Paulo 2026** · Sub-lane 3A, Agentic Payments
 
 ---
 
+Stellar's busiest x402 seller has been dead for 79 days. It took 1,581
+payments — 62% of every agentic payment on the chain — and 1,574 of them landed
+on a single day in May. Every dashboard that ranks sellers by volume still puts
+it first.
+
+That is the kind of thing you can only say once someone is counting.
+
 ## What this fork adds
 
-<!-- TODO: keep only what actually ended up working -->
-
-- Stellar in the chain selector, with volume, transactions and unique buyers
-- Indexing of x402 payments settled on Stellar via facilitator, using [Hubble](https://developers.stellar.org/docs/data/analytics/hubble) as the data source
-- Transaction links to [stellar.expert](https://stellar.expert)
-- Registered Stellar facilitators: <!-- TODO: which ones -->
-
-<!-- TODO: if the MPP Charge spike landed, add it here — and state plainly that
-     it covers ONE service we deployed, not the MPP ecosystem. The claim is
-     "MPP is indexable, here's proof", not "we index MPP". -->
+- **A Stellar sync adapter** — `sync/transfers/trigger/chains/stellar/soroban/`.
+  Indexes x402 settlements from public Horizon. No credentials, no API keys, no
+  GCP project. 2,540 mainnet payments, from the protocol's first transaction.
+- **Service identity through SEP-1** — `pnpm sync:stellar-identities` resolves
+  anonymous `G…` addresses to real organisations via `home_domain` →
+  `stellar.toml`. Four resolve today: LOBSTR, Scopuly, Ultra Stellar, and
+  LumenBro (the only one verified bidirectionally).
+- **Seller liveness** — active vs dormant, active days against lifespan, and the
+  share of a seller's payments that landed on its busiest single day. The
+  metric that separates a burst from a business.
+- **Machine payment profile** — the shape of the flow rather than its size.
+  90.6% of Stellar x402 payments are exactly 0.001 USDC, and the median gap
+  between one buyer's consecutive payments is 29 seconds.
+- **Stellar in the agent-facing API** — the chain filter was hardcoded to Base
+  and Solana, so `openapi.json` told agents Stellar did not exist.
+- **A deployment path off Vercel** — Dockerfile, Railway config, and a database
+  migration that refuses to run against a non-Timescale target.
 
 ## Why Stellar was missing
 
-`grep -ri "stellar|soroban"` across the upstream repository returned zero results. It wasn't for lack of activity — nobody had written the adapter.
+`grep -ri "stellar\|soroban"` across upstream returned zero results. Not for
+lack of activity — nobody had written the adapter.
 
-The interesting part is *why*, and it's an attribution problem rather than an engineering one. Nothing on Stellar is hidden: every payment is a visible SAC transfer. The question is whether a protocol's payments can be **enumerated** without already knowing who's involved — and that comes down to how many anchors exist and whether anyone publishes them.
+The interesting part is _why_, and it is a discovery problem rather than an
+engineering one. x402scan identifies sellers from a discovery document at
+`/.well-known/x402` or `/openapi.json`. **No Stellar service publishes one** —
+checked across every seller receiving x402 payments on mainnet, and the
+endpoints that answered 200 were single-page-app fallbacks returning HTML.
 
-x402 has few anchors, shared across services, publicly registered. MPP Charge has one anchor per service and no directory listing them. MPP Channel — the mode that settles *off-chain* — turns out to be the most enumerable of the three, because every channel instance shares a WASM hash.
+Stellar solved this before x402 existed. An account declares `home_domain`, and
+that domain serves SEP-1 `stellar.toml` with the organisation behind it. The
+identity layer was already there; it just was not the one this codebase knew how
+to read. Until this fork, `AcceptsNetwork` had no `stellar` value at all —
+registering a Stellar service was not difficult, it was impossible.
 
-Full reasoning in **[docs/MPP-ATTRIBUTION.md](docs/MPP-ATTRIBUTION.md)**. That diagnosis is the main contribution of this work. The code is the consequence.
+## The attribution finding
+
+Nothing on Stellar is hidden: every payment is a visible SAC transfer. The
+question is whether a protocol's payments can be **enumerated** without already
+knowing who is involved, and that reduces to how many anchors exist and who
+publishes them.
+
+| Protocol    | Anchor                      | How many               | Published?         |
+| ----------- | --------------------------- | ---------------------- | ------------------ |
+| x402        | Facilitator address         | few, shared            | yes, public        |
+| MPP Charge  | The service's own address   | one per service        | **no**             |
+| MPP Channel | `one-way-channel` WASM hash | **one, protocol-wide** | derivable on-chain |
+
+It inverts the intuition: the mode that settles _off-chain_ is the most
+enumerable. And the highest-frequency agentic traffic is architecturally
+invisible — an MPP Channel session is two on-chain transactions regardless of
+whether it carried three payments or ten thousand.
+
+Full reasoning, with sources, in **[docs/MPP-ATTRIBUTION.md](docs/MPP-ATTRIBUTION.md)**.
+That diagnosis is the main contribution. The code is the consequence.
 
 ## Data status
 
-<!-- TODO — MANDATORY. Pick one and delete the others:
-  (a) Mainnet data indexed from Hubble.
-  (b) Testnet data. Volume includes N transactions we generated ourselves to
-      demonstrate the pipeline, labeled as such in the UI.
-  (c) The automated sync was not validated in time; the rows shown were
-      inserted manually from real transactions verified on stellar.expert.
-      The adapter is still shipped in the PR.
--->
+**Mainnet. Nothing seeded, nothing generated by us.**
 
-## Technical details
+2,540 x402 payments indexed from public Horizon, 2026-03-06 16:51 UTC through
+today, across 37 buyers and 23 sellers. The first indexed payment is 65 minutes
+after the OpenZeppelin facilitator plugin's launch commit that same day, and
+four days before Stellar announced x402 support.
 
-How the adapter works, the Hubble query, and the integration traps (decimals, address formatting): **[docs/STELLAR.md](docs/STELLAR.md)**.
+Reproducible without anything from us:
+
+```bash
+pnpm --filter @x402scan/sync-transfers sync:once --chain stellar
+```
+
+**No MPP payment is indexed, deliberately.** There is no directory of MPP
+services to read an address from, and no MPP Charge traffic was found on
+mainnet. Deploying our own service and reporting self-generated traffic as MPP
+support was the available alternative; [docs/STELLAR.md](docs/STELLAR.md) says
+so plainly instead.
+
+## Documentation
+
+| Document                                           | Contents                                                            |
+| -------------------------------------------------- | ------------------------------------------------------------------- |
+| [docs/STELLAR.md](docs/STELLAR.md)                 | How the adapter works, and the integration traps that fail silently |
+| [docs/MPP-ATTRIBUTION.md](docs/MPP-ATTRIBUTION.md) | The attribution model, sourced to the protocol docs                 |
+| [docs/TESTING.md](docs/TESTING.md)                 | How to test it, as a person and as an agent                         |
+| [deploy/README.md](deploy/README.md)               | Running it outside Vercel                                           |
+
+## Bugs found that are not Stellar-specific
+
+- **A NULL `log_index` defeats the unique index.** Postgres treats NULLs as
+  distinct, so `(tx_hash, log_index, chain, block_timestamp)` reads as enforced
+  and protects nothing. It bit twice: 1,561 duplicated rows on a re-run, then
+  the same payment stored twice three hours apart when an early script wrote
+  local time and the adapter wrote UTC. Neither copy violated the constraint.
+- **`MIN_FACILITATOR_TRANSACTIONS = 100`** hides any emerging chain by design.
+- **`REDIS_DISABLE: z.coerce.boolean()`** — `Boolean("false") === true`, so
+  setting `REDIS_DISABLE=false` disables Redis.
 
 ## Upstream contribution
 
-These changes are proposed back to Merit Systems: <!-- TODO: PR link -->
-
-All Stellar work lives on `feat/stellar-support`. This README is not part of that PR.
-
-## Running the project
-
-Unchanged from upstream — see [README.md](README.md).
-
-<!-- TODO: new environment variables, if the Hubble adapter needs any -->
+The Stellar adapter, the identity resolution and the attribution model are
+proposed back to Merit Systems. Branch `upstream-pr` carries the contribution
+without this fork's planning documents.
 
 ## License
 

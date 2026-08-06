@@ -25,6 +25,21 @@ that is a runtime migration rather than a deployment.
 | Redis        | Railway             | without it every dashboard query re-runs  |
 | Public URL   | Cloudflare Pages    | free `*.pages.dev`, proxying to Railway   |
 
+## A gotcha that costs an hour
+
+Turbo's `globalEnv` in `turbo.json` is an **allowlist**, not a list of hints.
+Anything not matched there is stripped from a task's environment before the task
+runs, so a variable exported in the Dockerfile simply does not reach
+`next build`.
+
+That is why `NEXT_OUTPUT_STANDALONE` and `SKIP_ENV_VALIDATION` are declared
+there. Without the declaration the build fails with `Invalid environment
+variables` while collecting page data — which reads as a missing secret, and
+sends you looking in the wrong place entirely. The secret is present; Turbo
+removed the flag that said not to check for it.
+
+Any new build-time variable needs the same treatment.
+
 ## 1. Databases
 
 Create a Timescale service and a Postgres service. Then load the local data:
