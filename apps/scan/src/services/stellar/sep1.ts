@@ -1,5 +1,37 @@
 const HORIZON_URL = 'https://horizon.stellar.org';
 const TOML_TIMEOUT_MS = 12_000;
+/** SEP-1 tomls are a few KB. Anything past this is not one. */
+const TOML_MAX_BYTES = 512 * 1024;
+
+/**
+ * `home_domain` is attacker-controlled: it is a field on a Stellar account, and
+ * anyone can set it to anything that fits in 32 characters. Fetching it from a
+ * server without checking turns this resolver into an SSRF primitive — an
+ * account pointing at `169.254.169.254` or `localhost` makes the server request
+ * its own cloud metadata or an internal service.
+ *
+ * A SEP-1 home domain is always a public DNS name, so anything that is not one
+ * is rejected: IP literals in either family, hostnames with no dot, and the
+ * reserved suffixes used for private networks.
+ */
+const BLOCKED_SUFFIXES = ['.local', '.internal', '.localhost', '.home.arpa'];
+
+export function isPublicDomain(host: string): boolean {
+  const h = host.toLowerCase().trim();
+  if (!h || h.length > 255) return false;
+  if (h === 'localhost' || BLOCKED_SUFFIXES.some(s => h.endsWith(s))) {
+    return false;
+  }
+  // No credentials, ports, paths or wildcards smuggled through the field.
+  if (/[^a-z0-9.-]/.test(h)) return false;
+  if (h.startsWith('.') || h.endsWith('.') || h.includes('..')) return false;
+  // IPv4 literal (IPv6 is already excluded by the character test above).
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(h)) return false;
+  // A public domain has at least one dot and a non-numeric TLD.
+  const lastDot = h.lastIndexOf('.');
+  if (lastDot <= 0) return false;
+  return /^[a-z]{2,}$/.test(h.slice(lastDot + 1));
+}
 
 /**
  * How strongly a Stellar address is tied to the organization it claims.
@@ -81,12 +113,28 @@ async function fetchHomeDomain(address: string): Promise<string | null> {
 }
 
 async function fetchStellarToml(domain: string): Promise<string | null> {
+  if (!isPublicDomain(domain)) return null;
+
   try {
     const res = await fetch(`https://${domain}/.well-known/stellar.toml`, {
       signal: AbortSignal.timeout(TOML_TIMEOUT_MS),
     });
     if (!res.ok) return null;
-    const body = await res.text();
+
+    // Re-check after redirects: the pre-flight check only validates the domain
+    // we were given, and a public domain is free to 302 somewhere internal.
+    try {
+      if (!isPublicDomain(new URL(res.url).hostname)) return null;
+    } catch {
+      return null;
+    }
+
+    // A declared length past the cap is refused without reading the body; an
+    // absent or lying header still cannot get past the slice below.
+    const declared = Number(res.headers.get('content-length') ?? '0');
+    if (declared > TOML_MAX_BYTES) return null;
+
+    const body = (await res.text()).slice(0, TOML_MAX_BYTES);
     // Guard against SPA catch-all routes that answer 200 with an HTML shell.
     if (/^\s*<!doctype html|^\s*<html/i.test(body)) return null;
     return body;
