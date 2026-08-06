@@ -9,12 +9,24 @@ import ws from 'ws';
 
 neonConfig.webSocketConstructor = ws;
 
-// Local Postgres support: Neon's serverless driver only speaks to Neon
-// endpoints. When the connection string points at localhost, fall back to the
-// standard pg driver so the app runs without a Neon account.
-const isLocal = /localhost|127\.0\.0\.1/.test(
-  process.env.SCAN_DATABASE_URL ?? ''
-);
+/**
+ * Neon's serverless driver only speaks to Neon endpoints, so the driver choice
+ * has to follow the host.
+ *
+ * The test asks whether the host *is* Neon rather than whether it is localhost.
+ * Matching on localhost was the first attempt and it only works on a developer
+ * machine: inside a container the local database is `host.docker.internal`, and
+ * on a platform like Railway it is `postgres.railway.internal`. Neither matches,
+ * so both would take the Neon driver against a plain Postgres and fail with
+ * "Error connecting to database: TypeError: fetch failed" — which reads as the
+ * database being unreachable rather than the wrong client being used.
+ *
+ * Neon is the special case. Standard Postgres is the default.
+ */
+export const usesNeonDriver = (url: string | undefined) =>
+  /\.neon\.tech|\.neon\.build/.test(url ?? '');
+
+const IS_NEON = usesNeonDriver(process.env.SCAN_DATABASE_URL);
 
 const globalForPrisma = global as unknown as {
   scanDb: PrismaClient;
@@ -23,9 +35,11 @@ const globalForPrisma = global as unknown as {
 
 const scanDbAdapter =
   globalForPrisma.scanDbAdapter ||
-  (isLocal
-    ? new PrismaPg(new Pool({ connectionString: process.env.SCAN_DATABASE_URL }))
-    : new PrismaNeon({ connectionString: process.env.SCAN_DATABASE_URL! }));
+  (IS_NEON
+    ? new PrismaNeon({ connectionString: process.env.SCAN_DATABASE_URL! })
+    : new PrismaPg(
+        new Pool({ connectionString: process.env.SCAN_DATABASE_URL })
+      ));
 if (process.env.NODE_ENV !== 'production')
   globalForPrisma.scanDbAdapter = scanDbAdapter;
 
