@@ -51,7 +51,7 @@ ENV NEXT_OUTPUT_STANDALONE=true \
 # ARG rather than plain ENV so a platform can override per deployment: the app
 # URL in particular differs for every environment, and Railway passes service
 # variables to a Dockerfile build as build args.
-ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
+ARG NEXT_PUBLIC_APP_URL=https://app-production-49b7.up.railway.app
 ARG NEXT_PUBLIC_PROXY_URL=https://proxy.x402scan.com
 ARG NEXT_PUBLIC_NODE_ENV=production
 ARG NEXT_PUBLIC_SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
