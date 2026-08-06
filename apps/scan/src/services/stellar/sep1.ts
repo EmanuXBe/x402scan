@@ -98,5 +98,10 @@ async function fetchStellarToml(domain: string): Promise<string | null> {
 /** Minimal SEP-1 reader: only top-level `KEY = "value"` pairs are needed. */
 function tomlValue(toml: string, key: string): string | undefined {
   const match = new RegExp(`^\\s*${key}\\s*=\\s*"([^"]*)"`, 'im').exec(toml);
-  return match?.[1]?.trim() || undefined;
+  const value = match?.[1]?.trim();
+  // A key that is present but blank (`NAME = ""` or all whitespace) is not an
+  // identity, so it has to read as absent. The test is spelled out because `??`
+  // would keep the empty string and surface a nameless service as if it had
+  // been resolved.
+  return value === undefined || value === '' ? undefined : value;
 }

@@ -1,9 +1,4 @@
-import type {
-  Chain,
-  SupportedChain,
-  SupportedEVMChain,
-  WalletChain,
-} from '@/types/chain';
+import type { Chain, SupportedEVMChain, WalletChain } from '@/types/chain';
 import type z from 'zod';
 import type { getTokenBalanceSchema, sendTokensSchema } from './schemas';
 import type { SolanaAddress } from '@/types/address';

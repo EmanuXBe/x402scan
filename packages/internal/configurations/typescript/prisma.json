@@ -5,6 +5,15 @@
     "moduleResolution": "node",
     "target": "ES2023",
     "strict": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    // Matches base.json, which every other config in the repo already sets.
+    // Without it these two packages are the only ones that type-check
+    // third-party .d.ts files, and @neondatabase/serverless declares its Client
+    // as extending pg's Client while the two definitions genuinely disagree on
+    // connect(). That conflict only becomes visible once @types/pg is in the
+    // tree — which it is, since the local-development pg fallback needs it —
+    // and it fails the build over a mismatch in node_modules that no code here
+    // can fix.
+    "skipLibCheck": true
   }
 }

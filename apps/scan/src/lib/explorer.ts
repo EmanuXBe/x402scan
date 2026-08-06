@@ -30,7 +30,8 @@ const EXPLORERS: Record<Chain, { tx: string; account: string }> = {
   },
 };
 
-const STELLAR_CONTRACT_PATH = 'https://stellar.expert/explorer/public/contract/';
+const STELLAR_CONTRACT_PATH =
+  'https://stellar.expert/explorer/public/contract/';
 
 const isChain = (value: string): value is Chain =>
   (Object.values(Chain) as string[]).includes(value);
@@ -49,13 +50,22 @@ export const explorerAccountUrl = (
   return `${EXPLORERS[chain].account}${address}`;
 };
 
-export const explorerName = (chain: string): string =>
-  chain === Chain.STELLAR
-    ? 'stellar.expert'
-    : chain === Chain.SOLANA
-      ? 'Solscan'
-      : chain === Chain.POLYGON
-        ? 'Polygonscan'
-        : chain === Chain.OPTIMISM
-          ? 'Optimistic Etherscan'
-          : 'Basescan';
+const EXPLORER_NAMES: Record<Chain, string> = {
+  [Chain.BASE]: 'Basescan',
+  [Chain.POLYGON]: 'Polygonscan',
+  [Chain.OPTIMISM]: 'Optimistic Etherscan',
+  [Chain.SOLANA]: 'Solscan',
+  [Chain.STELLAR]: 'stellar.expert',
+};
+
+/**
+ * Returns null for an unrecognised chain rather than a default name.
+ *
+ * This was a ternary chain ending in `: 'Basescan'`, which meant any value that
+ * matched nothing — a new chain, a typo, a string from the database — was
+ * labelled Basescan and linked nowhere near it. A Record also makes the mapping
+ * exhaustive: adding a Chain member now fails to compile until it has a name,
+ * which a fallback branch silently absorbed.
+ */
+export const explorerName = (chain: string): string | null =>
+  isChain(chain) ? EXPLORER_NAMES[chain] : null;

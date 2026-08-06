@@ -19,9 +19,9 @@ const isLocalUrl = (url: string | undefined) =>
 
 const IS_LOCAL = isLocalUrl(process.env.TRANSFERS_DB_URL);
 
-type HttpQueryable = {
+interface HttpQueryable {
   query: (query: string, params?: unknown[]) => Promise<unknown[]>;
-};
+}
 
 const localPools = new Map<string, Pool>();
 const getLocalPool = (url: string) => {
@@ -34,8 +34,15 @@ const getLocalPool = (url: string) => {
 
 // Mirrors the interface of neon()'s http client (rows array, not Result).
 const localHttpClient = (url: string): HttpQueryable => ({
-  query: async (query, params) =>
-    (await getLocalPool(url).query(query, params as unknown[])).rows,
+  query: async (query, params) => {
+    // Annotated rather than returned inline: pg types `rows` as any[], and
+    // returning that straight out erases the unknown[] the interface promises.
+    const result: { rows: unknown[] } = await getLocalPool(url).query(
+      query,
+      params
+    );
+    return result.rows;
+  },
 });
 
 const createAdapter = (url: string) =>
