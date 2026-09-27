@@ -2,9 +2,9 @@
 
 ## Pitch
 
-Stellar's busiest x402 seller has been dead for 79 days. It took 1,581 payments — 62% of every agentic payment on the chain — and 1,574 of them landed on a single day in May. Every dashboard that ranks sellers by volume still puts it first. StellarScan indexes all 2,540 agentic payments ever settled on Stellar mainnet, from the protocol's very first transaction, and shows which sellers are actually alive.
+Stellar's busiest x402 seller has been dead for 80 days. It took 1,581 payments — 62% of every agentic payment the chain has ever settled — and 1,574 of them landed on one day in May. Every dashboard that ranks sellers by volume still puts it first. StellarScan indexes all 2,540, from the first payment the facilitator ever settled, and shows which sellers are actually alive.
 
-The data was never hidden — the tooling asked the wrong question. x402scan discovers services through `/.well-known/x402`, which no Stellar service publishes; Stellar uses SEP-1. We fixed the discovery model, resolved anonymous `G…` addresses to real companies, and are sending it upstream. Nothing is fabricated: every figure regenerates from public Horizon with one command. The narrative says agentic payments here are accelerating; the chain says 24 payments last week across three live sellers. Both can be true — but only one of them was measurable, and you cannot grow what you cannot see.
+The data was never hidden; the tooling asked the wrong question. x402 explorers find services through `/.well-known/x402`, and no Stellar service publishes one — so the front door to the registry does not open, however many payments settle behind it. Stellar had solved identity years earlier through SEP-1, so we read it off the chain instead: LOBSTR, Scopuly, Ultra Stellar and LumenBro, recovered from anonymous `G…` addresses without needing their cooperation. Nothing is seeded — every figure rebuilds from public Horizon with one command and no credentials. The narrative says agentic payments on Stellar are accelerating. The chain says 12 payments last week, across two live sellers. Both can be true — but only one of them was measurable, and you cannot grow what you cannot see.
 
 ---
 
