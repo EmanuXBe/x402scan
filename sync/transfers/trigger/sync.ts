@@ -15,8 +15,20 @@ import { collapseTransferChains } from './lib/collapse';
 
 import type { Facilitator, FacilitatorConfig, SyncConfig } from './types';
 
+/**
+ * EVM addresses are case-insensitive hex, so they get lowercased to keep sync
+ * state keys stable. Solana (base58) and Stellar (base32 `G…`/`C…`) addresses
+ * are case-sensitive — lowercasing them corrupts the address, and because this
+ * feeds the sync cursor key, the cursor would never match and the sync would
+ * re-query the same window forever.
+ */
+const CASE_SENSITIVE_CHAINS = new Set<string>([
+  Network.SOLANA.toString(),
+  Network.STELLAR.toString(),
+]);
+
 function normalizeAddress(chain: string, address: string): string {
-  return chain === Network.SOLANA.toString() ? address : address.toLowerCase();
+  return CASE_SENSITIVE_CHAINS.has(chain) ? address : address.toLowerCase();
 }
 
 function getSyncStateKey(
@@ -97,7 +109,12 @@ async function getOrCreateTransferSyncState(
   return { key, state };
 }
 
-async function syncFacilitator(
+/**
+ * Sync one facilitator for one chain. Exported so a chain adapter can be run
+ * once from the command line (see scripts/run-chain-sync.ts) without a
+ * trigger.dev project — the scheduled tasks below are the only other caller.
+ */
+export async function syncFacilitator(
   syncConfig: SyncConfig,
   facilitator: Facilitator,
   now: Date

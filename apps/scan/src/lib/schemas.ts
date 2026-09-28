@@ -1,9 +1,9 @@
 import z from 'zod';
 
-import { Chain, SUPPORTED_CHAINS } from '@/types/chain';
+import { Chain, SUPPORTED_CHAINS, WALLET_CHAINS } from '@/types/chain';
 
 import { isAddress } from 'viem';
-import type { MixedAddress, SolanaAddress } from '@/types/address';
+import type { MixedAddress, SolanaAddress, StellarAddress } from '@/types/address';
 import type { Address } from 'viem';
 
 export const ethereumAddressSchema = z
@@ -22,14 +22,24 @@ export const solanaAddressSchema = z
   .regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/, 'Invalid Solana address')
   .transform(address => address as SolanaAddress);
 
+// Stellar strkeys are case-sensitive base32: G... accounts, C... contracts.
+export const stellarAddressSchema = z
+  .string()
+  .regex(/^[GC][A-Z2-7]{55}$/, 'Invalid Stellar address')
+  .transform(address => address as StellarAddress);
+
 // Create a mixed address schema
 export const mixedAddressSchema = z
-  .union([ethereumAddressSchema, solanaAddressSchema])
+  .union([ethereumAddressSchema, solanaAddressSchema, stellarAddressSchema])
   .transform(address => address as MixedAddress);
 
 export const chainSchema = z.enum(Chain);
 export const optionalChainSchema = chainSchema.optional();
 export const supportedChainSchema = z.enum(SUPPORTED_CHAINS);
+// Narrower than supportedChainSchema: only chains the embedded wallet can
+// transact on. Use this for wallet, onramp, deposit and withdraw inputs.
+export const walletChainSchema = z.enum(WALLET_CHAINS);
+export const optionalWalletChainSchema = walletChainSchema.optional();
 export const optionalSupportedChainSchema = supportedChainSchema.optional();
 
 export const timePeriodSchema = z.number().nonnegative();

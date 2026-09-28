@@ -100,4 +100,15 @@ export const env = createEnv({
       process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
   },
   emptyStringAsUndefined: true,
+  /**
+   * Lets a container image be built without production secrets.
+   *
+   * Vercel has every variable present at build time, so upstream never needed
+   * this. Building anywhere else means either baking real credentials into an
+   * image layer or handing the build dummies for CDP, Stripe and a database it
+   * will not contact — both worse than skipping a check that runs again, for
+   * real, when the server boots. This is the pattern t3-env documents for CI
+   * and Docker.
+   */
+  skipValidation: !!process.env.SKIP_ENV_VALIDATION,
 });

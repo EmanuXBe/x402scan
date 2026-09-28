@@ -22,11 +22,11 @@ import { OnrampSessionDialog } from './content/onramp-session-dialog';
 import { WalletChainProvider } from '@/app/(app)/_contexts/wallet-chain/provider';
 import { WalletChain } from '@/app/(app)/_contexts/wallet-chain/component';
 
-import type { SupportedChain } from '@/types/chain';
+import type { WalletChain as WalletChainType } from '@/types/chain';
 
 interface Props {
   children: React.ReactNode;
-  chainsWithBalance: [SupportedChain, ...SupportedChain[]];
+  chainsWithBalance: [WalletChainType, ...WalletChainType[]];
 }
 
 export const WalletDialog: React.FC<Props> = ({

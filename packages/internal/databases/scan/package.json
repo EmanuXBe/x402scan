@@ -23,12 +23,15 @@
   "dependencies": {
     "@neondatabase/serverless": "catalog:prisma",
     "@prisma/adapter-neon": "catalog:prisma",
+    "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "catalog:prisma",
     "dotenv": "catalog:env",
+    "pg": "^8.22.0",
     "ws": "catalog:prisma"
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "@types/pg": "^8.20.4",
     "@types/ws": "catalog:prisma",
     "@x402scan/eslint-config": "workspace:*",
     "@x402scan/typescript-config": "workspace:*",

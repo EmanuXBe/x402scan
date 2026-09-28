@@ -76,6 +76,7 @@ export const columns: ExtendedColumnDef<ColumnType>[] = [
     cell: ({ row }) => (
       <Address
         address={row.original.tx_hash}
+        explorerChain={row.original.chain}
         className="text-xs block text-center"
         disableCopy
         hideTooltip

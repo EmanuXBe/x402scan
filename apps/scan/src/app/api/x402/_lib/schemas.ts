@@ -1,5 +1,7 @@
 import z from 'zod';
 
+import { SUPPORTED_CHAINS } from '@/types/chain';
+
 // ── Reusable primitives ──────────────────────────────
 
 const paginationSchema = z.object({
@@ -18,8 +20,17 @@ const paginationSchema = z.object({
     .describe('Items per page (1-100, default 10)'),
 });
 
+/**
+ * Derived from SUPPORTED_CHAINS rather than listed literally.
+ *
+ * This was `z.enum(['base', 'solana'])`, so adding a chain to the explorer left
+ * the agent-facing API rejecting it — and silently, because the enum is also
+ * what gets published in the 402 response's Bazaar schema. An agent reading
+ * that schema is told the chain does not exist. Deriving it means the API can
+ * no longer disagree with the app about which chains are supported.
+ */
 const chainFilterSchema = z
-  .enum(['base', 'solana'])
+  .enum(SUPPORTED_CHAINS)
   .optional()
   .describe('Filter by chain');
 

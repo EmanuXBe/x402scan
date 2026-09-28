@@ -4,12 +4,18 @@ import { Prisma } from '@x402scan/transfers-db';
 import { queryRaw } from '@/services/transfers/client';
 import { createCachedQuery, createStandardCacheKey } from '@/lib/cache';
 import { chainSchema } from '@/lib/schemas';
+
+import type { SupportedChain } from '@/types/chain';
 import { getMaterializedViewSuffix } from '@/lib/time-range';
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type WalletStatsInput = {
   address: string;
-  chain?: 'base' | 'solana';
+  // SupportedChain, not a literal pair. Despite the name this is analytics over
+  // any buyer address — it reads sender_stats_aggregated_* and filters by chain
+  // — so it has no reason to be narrower than the chains the explorer indexes.
+  // The literal list silently excluded Stellar buyers from the agent-facing API.
+  chain?: SupportedChain;
   timeframe: number;
 };
 

@@ -6,6 +6,8 @@ import { TopServers } from '../(overview)/_components/sellers/known-sellers';
 import { TopFacilitators } from '../(overview)/_components/top-facilitators';
 import { LatestTransactions } from '../(overview)/_components/latest-transactions';
 import { AllSellers } from '../(overview)/_components/sellers/all-sellers';
+import { SellerLiveness } from '../(overview)/_components/sellers/liveness';
+import { MachineProfile } from '../(overview)/_components/machine-profile';
 import { AllBuyers } from '../(overview)/_components/buyers';
 import { getChainForPage } from '@/app/(app)/_lib/chain/page';
 
@@ -21,7 +23,9 @@ export default async function AllPage({
       <HomeHeading />
       <Body>
         <OverallStats chain={chain} />
+        <MachineProfile chain={chain} />
         <TopServers chain={chain} />
+        <SellerLiveness chain={chain} />
         <TopFacilitators chain={chain} />
         <LatestTransactions chain={chain} />
         <AllSellers chain={chain} />

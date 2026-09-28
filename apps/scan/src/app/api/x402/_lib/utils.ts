@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { mixedAddressSchema } from '@/lib/schemas';
 
 import type { MixedAddress } from '@/types/address';
-import type { Chain } from '@/types/chain';
+import type { Chain, SupportedChain } from '@/types/chain';
 
 export function parseAddress(
   address: string
@@ -60,13 +60,17 @@ export function paginatedResponse(
 }
 
 /**
- * Cast validated chain string to Chain enum.
- * Safe because Zod already validates the value is 'base' | 'solana'.
+ * Widen a validated chain filter to the Chain enum.
+ *
+ * This used to take `'base' | 'solana'` and cast, on the reasoning that Zod had
+ * already validated the value. The reasoning was sound and the literal list was
+ * the problem: it duplicated the supported-chain set, so it went stale the
+ * moment a chain was added and the cast then hid the mismatch instead of
+ * surfacing it. Typed against SupportedChain there is nothing left to cast —
+ * every supported chain is already a Chain.
  */
-export function asChain(
-  chain: 'base' | 'solana' | undefined
-): Chain | undefined {
-  return chain as Chain | undefined;
+export function asChain(chain: SupportedChain | undefined): Chain | undefined {
+  return chain;
 }
 
 /**

@@ -22,3 +22,23 @@ export const USDC_POLYGON_TOKEN: Token = {
   decimals: USDC_DECIMALS,
   symbol: 'USDC',
 };
+
+// Stellar assets use 7 decimals, not 6. USDC is exposed to contracts through a
+// Stellar Asset Contract (SAC), so the "address" here is a C... contract id.
+const USDC_STELLAR_DECIMALS = 7;
+const USDC_STELLAR_PUBNET =
+  'CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75';
+const USDC_STELLAR_TESTNET =
+  'CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA';
+
+export const USDC_STELLAR_TOKEN: Token = {
+  address: USDC_STELLAR_PUBNET,
+  decimals: USDC_STELLAR_DECIMALS,
+  symbol: 'USDC',
+};
+
+export const USDC_STELLAR_TESTNET_TOKEN: Token = {
+  address: USDC_STELLAR_TESTNET,
+  decimals: USDC_STELLAR_DECIMALS,
+  symbol: 'USDC',
+};

@@ -11,6 +11,12 @@ const agentDiscoveryLinkHeader = [
 ].join(', ');
 
 const nextConfig: NextConfig = {
+  // Required to run this app anywhere other than Vercel. Standalone emits a
+  // self-contained server plus only the node_modules it actually imports, which
+  // for a pnpm monorepo is the difference between a deployable image and
+  // copying the entire workspace. Vercel ignores the setting.
+  output:
+    process.env.NEXT_OUTPUT_STANDALONE === 'true' ? 'standalone' : undefined,
   typedRoutes: true,
   pageExtensions: ['js', 'jsx', 'md', 'mdx', 'ts', 'tsx'],
   async headers() {

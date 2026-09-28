@@ -10,6 +10,11 @@ import { iterateResourcesBatched } from '@/services/labeling/helpers';
 
 import { checkCronSecret } from '@/lib/cron';
 
+// A cron-invoked handler that reads and writes the scan database. Nothing about
+// it is static, and leaving it eligible for build-time evaluation means the
+// build needs a live database — the same failure the sitemap hit.
+export const dynamic = 'force-dynamic';
+
 import type { Prisma } from '@x402scan/scan-db';
 
 const resourceLabelingPayloadSchema = z.object({

@@ -18,7 +18,8 @@
     "sync:ecosystem": "tsx src/scripts/sync-ecosystem.ts",
     "knip": "pnpm -w knip --workspace ./apps/scan",
     "format": "pnpm -w format:dir ./apps/scan",
-    "format:check": "pnpm -w format:check:dir ./apps/scan"
+    "format:check": "pnpm -w format:check:dir ./apps/scan",
+    "sync:stellar-identities": "tsx src/scripts/sync-stellar-identities.ts"
   },
   "dependencies": {
     "@agentcash/discovery": "1.7.5",

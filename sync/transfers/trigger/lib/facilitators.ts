@@ -12,6 +12,7 @@ const chainMap: Record<FacilitatorsNetwork, Network> = {
   [FacilitatorsNetwork.BASE]: Network.BASE,
   [FacilitatorsNetwork.POLYGON]: Network.POLYGON,
   [FacilitatorsNetwork.SOLANA]: Network.SOLANA,
+  [FacilitatorsNetwork.STELLAR]: Network.STELLAR,
 };
 
 function convertAddressConfig(
@@ -22,6 +23,7 @@ function convertAddressConfig(
     token,
     syncStartDate: facilitatorAddress.dateOfFirstTransaction,
     enabled: !facilitatorAddress.deprecated,
+    anchor: facilitatorAddress.anchor ?? 'submitter',
   }));
 }
 

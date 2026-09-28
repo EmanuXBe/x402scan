@@ -2,6 +2,19 @@ import type { MetadataRoute } from 'next';
 
 import { scanDb } from '@x402scan/scan-db';
 
+/**
+ * Generated per request, not at build time.
+ *
+ * This sitemap enumerates registered resources out of the scan database, so
+ * prerendering it requires a reachable database during the build — which holds
+ * on Vercel and nowhere else. Building a container image failed here with a
+ * Prisma connection error after everything else had already succeeded.
+ *
+ * Dynamic is also the more correct setting on its own terms: a sitemap baked
+ * from a live registry is stale as soon as the next resource is registered.
+ */
+export const dynamic = 'force-dynamic';
+
 import { env } from '@/env';
 import { facilitators } from '@/lib/facilitators';
 

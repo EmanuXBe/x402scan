@@ -24,7 +24,7 @@ import { SessionStatus, type OnrampSession } from '@x402scan/scan-db/types';
 import { api } from '@/trpc/client';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
-import { optionalSupportedChainSchema } from '@/lib/schemas';
+import { optionalWalletChainSchema } from '@/lib/schemas';
 
 export const OnrampSessionDialog: React.FC = () => {
   const [isSessionDialogOpen, setIsSessionDialogOpen] = useState(false);
@@ -34,7 +34,7 @@ export const OnrampSessionDialog: React.FC = () => {
 
   const searchParams = useSearchParams();
 
-  const networkParamResult = optionalSupportedChainSchema.safeParse(
+  const networkParamResult = optionalWalletChainSchema.safeParse(
     searchParams.get('network')
   );
 

@@ -118,6 +118,8 @@ enum AcceptsNetwork {
   solana
   polygon
   optimism
+  stellar
+  stellar_testnet
 }
 
 model Accepts {

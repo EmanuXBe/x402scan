@@ -1,0 +1,28 @@
+# The build copies the whole workspace, so this file is what keeps the context
+# from including several GB of installed dependencies and build output.
+node_modules
+**/node_modules
+.next
+**/.next
+dist
+**/dist
+.turbo
+**/.turbo
+generated
+**/generated
+
+.git
+.github
+
+# Never let local credentials reach a build layer.
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+*.log
+.DS_Store
+coverage
+**/coverage

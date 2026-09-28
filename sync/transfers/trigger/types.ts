@@ -1,12 +1,14 @@
-import { Network, type Token } from 'facilitators';
+import { Network, type Token, type AttributionAnchor } from 'facilitators';
 
-export { Network, type Token };
+export { Network, type Token, type AttributionAnchor };
 
 export interface FacilitatorConfig {
   address: string;
   token: Token;
   syncStartDate: Date;
   enabled: boolean;
+  /** See AttributionAnchor in the facilitators package. Defaults to submitter. */
+  anchor?: AttributionAnchor;
 }
 
 export interface Facilitator {
@@ -39,12 +41,22 @@ export enum QueryProvider {
   BITQUERY = 'bitquery',
   BIGQUERY = 'bigquery',
   CDP = 'cdp',
+  // Stellar: Horizon REST, which needs no credentials and keeps full history.
+  // The recipient-anchored path additionally calls Soroban RPC `getEvents` to
+  // shortlist candidate transactions, but Horizon is what resolves and serves
+  // every row, so that is what the stored provider records. Public RPC retains
+  // only days of events (read it from `getHealth`, don't assume); Hubble
+  // (BigQuery) is the option for deep recipient-side history — see
+  // docs/STELLAR.md.
+  HORIZON = 'horizon',
 }
 
 interface BaseQueryConfig {
   chain: string;
   provider: QueryProvider;
   apiUrl?: string;
+  /** Soroban JSON-RPC endpoint, used by recipient-anchored Stellar discovery. */
+  rpcUrl?: string;
   buildQuery: (
     config: SyncConfig,
     facilitatorConfig: FacilitatorConfig,

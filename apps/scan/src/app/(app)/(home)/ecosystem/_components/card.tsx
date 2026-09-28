@@ -1,3 +1,7 @@
+'use client';
+
+import { useState } from 'react';
+
 import {
   Card,
   CardContent,
@@ -21,13 +25,7 @@ export const EcosystemCard: React.FC<Props> = ({ item, showBadge }) => {
       <Card className="justify-between flex flex-col hover:border-primary transition-colors h-full">
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Image
-              src={item.logoUrl}
-              alt={item.name}
-              width={16}
-              height={16}
-              className="rounded-md"
-            />
+            <EcosystemLogo name={item.name} logoUrl={item.logoUrl} />
             <CardTitle>{item.name}</CardTitle>
           </div>
           <CardDescription>{item.description}</CardDescription>
@@ -39,6 +37,40 @@ export const EcosystemCard: React.FC<Props> = ({ item, showBadge }) => {
         )}
       </Card>
     </a>
+  );
+};
+
+/**
+ * Several ecosystem logos are hosted on x402.org and currently 404 there, so a
+ * broken <Image> would render as a torn-icon on every card. Fall back to a
+ * monogram tile instead of showing the failure.
+ */
+const EcosystemLogo = ({
+  name,
+  logoUrl,
+}: {
+  name: string;
+  logoUrl: string;
+}) => {
+  const [failed, setFailed] = useState(false);
+
+  if (failed) {
+    return (
+      <div className="size-4 rounded-md bg-muted flex items-center justify-center text-[8px] font-semibold text-muted-foreground shrink-0">
+        {name.charAt(0).toUpperCase()}
+      </div>
+    );
+  }
+
+  return (
+    <Image
+      src={logoUrl}
+      alt={name}
+      width={16}
+      height={16}
+      className="rounded-md"
+      onError={() => setFailed(true)}
+    />
   );
 };
 
