@@ -2,7 +2,9 @@ import type { KnipConfig } from 'knip';
 
 const config: KnipConfig = {
   workspaces: {
-    '.': {},
+    '.': {
+      entry: ['scripts/audit/*.mjs'],
+    },
     'apps/scan': {
       entry: [
         'src/app/**/{error,layout,loading,not-found,page,template,default,forbidden,global-not-found,global-error}.{js,jsx,ts,tsx}',

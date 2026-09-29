@@ -1,0 +1,34 @@
+{
+  "asOf": "2026-09-29T20:41:45.726Z",
+  "requests": 7,
+  "operationsListedForPayTo": 1205,
+  "operationTypes": {
+    "create_account": 1,
+    "change_trust": 1,
+    "invoke_host_function": 1133,
+    "payment": 68,
+    "create_claimable_balance": 1,
+    "account_merge": 1
+  },
+  "inboundUsdcTransfers": 1046,
+  "volumeUSDC": 38.85,
+  "payers": 27,
+  "first": "2026-04-10T07:03:57Z",
+  "last": "2026-09-29T20:00:16Z",
+  "settledByOzRelayer": 0,
+  "feeAccounts": [
+    [
+      "GB5LCXFTBHXJ32XQBHX4EQKQPCHZRHU3XXHHN54QE3O3QTAN6RQZ3XEE",
+      1035
+    ],
+    [
+      "GBD64XFGJHG42CEVQKH4TYCIAMEHVBMW7A24KS22TKOSSA73IVW3CYIK",
+      6
+    ],
+    [
+      "GDK3AVW3YE6UL3J4WLNKBMP65KSY32YPUKIOC6PXW65XJ3LEG3YIDXXB",
+      5
+    ]
+  ],
+  "distinctTxSources": 3
+}

@@ -1,0 +1,100 @@
+{
+  "relayer": "GA5SXMFJTUPTZRIEKM6XZLCYOZRMUEE6KGAHL3GXDBG64DYOUIWYIF3M",
+  "transactions": {
+    "count": 2640,
+    "first": "2026-03-06T15:38:12Z",
+    "last": "2026-09-29T18:44:01Z",
+    "relayerIsSource": 0,
+    "relayerIsFeePayerOnly": 2576,
+    "feeBump": 2576,
+    "distinctTxSourceAccounts": 1162
+  },
+  "operationsStream": {
+    "operations": 64,
+    "transfers": 0,
+    "coversTransactions": "64/2640"
+  },
+  "spotCheck": {
+    "sampled": 15,
+    "matches": 1,
+    "mismatches": [
+      {
+        "tx": "0ce342fe12601630a4c3c989e6f8cf4dda7f32d3fa469316d1c103242a02f34e",
+        "perTx": 1,
+        "stream": 0
+      },
+      {
+        "tx": "2497fe2ca60bc3ca94658640347611ecaa77028a16b42ece8c11f472563695c4",
+        "perTx": 1,
+        "stream": 0
+      },
+      {
+        "tx": "3b53ebddca52b59ea6531b2cfacb6ba0907905ffa3f02e00ba2847791b818b15",
+        "perTx": 1,
+        "stream": 0
+      },
+      {
+        "tx": "cf009873b868182b00b7822a1509a9a23a3a542c4e4a7617341956c267cd700e",
+        "perTx": 1,
+        "stream": 0
+      },
+      {
+        "tx": "69c427f12c68e5f364d604d2c4fc5aef3f3228815d086c9ae8d8e374ad918f5a",
+        "perTx": 1,
+        "stream": 0
+      },
+      {
+        "tx": "0cd8a456acf51da4b7a61b2738bd372bb37b37af59cb72da2049699ba687dde5",
+        "perTx": 1,
+        "stream": 0
+      },
+      {
+        "tx": "93356e44f922863ea5fc46c36d1f546ade4b5c99d4a9aee54fd231bfbe019261",
+        "perTx": 1,
+        "stream": 0
+      },
+      {
+        "tx": "f56ef6dfe26ed1694f49f2387404cfa4ce52b8798ecc06567338ec29c8da3f28",
+        "perTx": 1,
+        "stream": 0
+      },
+      {
+        "tx": "8563552e663899f4c71b99a8a59e736e5728a0c81b7ab49f7486b9d33e3ea2c0",
+        "perTx": 1,
+        "stream": 0
+      },
+      {
+        "tx": "0a9154437a6664c9e808fff7d2bc5f281ccdfb29ad045dea358672d6f33102c8",
+        "perTx": 1,
+        "stream": 0
+      },
+      {
+        "tx": "39567a9d4256acb1a91ec572c53cd866de7f6e7e71e7613017174a8af21175de",
+        "perTx": 1,
+        "stream": 0
+      },
+      {
+        "tx": "fe230d780adf30f3b9cc2f25b42f7dc7a2b5918a0293e0c879b4911795102c7a",
+        "perTx": 1,
+        "stream": 0
+      },
+      {
+        "tx": "f01a237cb6154fc63c97dada82d9bd8c0813c148e09ddf5a6d46d2a992ce3800",
+        "perTx": 1,
+        "stream": 0
+      },
+      {
+        "tx": "24a49641a32f9e2956f146e731c932575a2c5ffc46e7da42be3c59a0cb36c6f9",
+        "perTx": 1,
+        "stream": 0
+      }
+    ]
+  },
+  "requests": {
+    "transactions": 14,
+    "operationsStream": 1,
+    "total": 30,
+    "currentMethodWouldNeed": 2654
+  },
+  "figures": null
+}
