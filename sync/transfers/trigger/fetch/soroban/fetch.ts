@@ -65,18 +65,46 @@ interface SorobanTransferRow {
   logIndex: number;
 }
 
-async function horizonGetOne<T>(url: string): Promise<T> {
-  const res = await fetch(url, { headers: { Accept: 'application/json' } });
-  if (!res.ok) throw new Error(`Horizon ${res.status} for ${url}`);
-  return (await res.json()) as T;
+const MAX_ATTEMPTS = 4;
+const MAX_RETRY_WAIT_MS = 30_000;
+
+/**
+ * GET from Horizon, retrying rate limits (429) and server errors (5xx).
+ *
+ * A final failure must propagate to the caller and fail the whole window.
+ * Skipping one transaction instead would store the rest of the window, and
+ * since the cursor resumes from the newest stored transfer, the skipped
+ * payments would never be requested again. A cold backfill makes one request
+ * per relayer transaction, so a 429 from the public Horizon is expected.
+ */
+async function horizonFetch<T>(url: string): Promise<T> {
+  for (let attempt = 1; ; attempt++) {
+    const res = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (res.ok) return (await res.json()) as T;
+
+    const retryable = res.status === 429 || res.status >= 500;
+    if (!retryable || attempt >= MAX_ATTEMPTS) {
+      throw new Error(`Horizon ${res.status} for ${url}`);
+    }
+
+    const retryAfterSeconds = Number(res.headers.get('retry-after'));
+    const waitMs = Math.min(
+      retryAfterSeconds > 0 ? retryAfterSeconds * 1000 : 1000 * 2 ** attempt,
+      MAX_RETRY_WAIT_MS
+    );
+    logger.warn(
+      `Horizon ${res.status} for ${url}, retry ${attempt} of ${MAX_ATTEMPTS - 1} in ${waitMs}ms`
+    );
+    await new Promise(resolve => setTimeout(resolve, waitMs));
+  }
 }
 
-async function horizonGet<T>(url: string): Promise<HorizonPage<T>> {
-  const res = await fetch(url, { headers: { Accept: 'application/json' } });
-  if (!res.ok) {
-    throw new Error(`Horizon ${res.status} for ${url}`);
-  }
-  return (await res.json()) as HorizonPage<T>;
+function horizonGetOne<T>(url: string): Promise<T> {
+  return horizonFetch<T>(url);
+}
+
+function horizonGet<T>(url: string): Promise<HorizonPage<T>> {
+  return horizonFetch<HorizonPage<T>>(url);
 }
 
 /**
@@ -159,20 +187,11 @@ async function fetchBySubmitter(
   const rows: SorobanTransferRow[] = [];
 
   for (const tx of transactions) {
-    let ops: HorizonOperation[];
-    try {
-      const body = await horizonGet<HorizonOperation>(
-        `${baseUrl}/transactions/${tx.hash}/operations?limit=${PAGE_LIMIT}`
-      );
-      ops = body._embedded?.records ?? [];
-    } catch (error) {
-      // Skipping here silently drops real payments, so say which transaction
-      // and why — a rate-limited Horizon looks identical to an empty result.
-      logger.warn(
-        `[${config.chain}] operations fetch failed for ${tx.hash}: ${String(error)}`
-      );
-      continue;
-    }
+    // No try/catch: a failed lookup has to fail the window (see horizonFetch).
+    const body = await horizonGet<HorizonOperation>(
+      `${baseUrl}/transactions/${tx.hash}/operations?limit=${PAGE_LIMIT}`
+    );
+    const ops = body._embedded?.records ?? [];
 
     let logIndex = 0;
     for (const op of ops) {
@@ -332,41 +351,38 @@ async function fetchByRecipient(
   const rows: SorobanTransferRow[] = [];
 
   for (const hash of candidateHashes) {
-    try {
-      const [tx, opsBody] = await Promise.all([
-        horizonGetOne<HorizonTransaction>(`${horizonUrl}/transactions/${hash}`),
-        horizonGet<HorizonOperation>(
-          `${horizonUrl}/transactions/${hash}/operations?limit=${PAGE_LIMIT}`
-        ),
-      ]);
+    // No try/catch, for the same reason as the submitter path.
+    const [tx, opsBody] = await Promise.all([
+      horizonGetOne<HorizonTransaction>(`${horizonUrl}/transactions/${hash}`),
+      horizonGet<HorizonOperation>(
+        `${horizonUrl}/transactions/${hash}/operations?limit=${PAGE_LIMIT}`
+      ),
+    ]);
 
-      let logIndex = 0;
-      for (const op of opsBody._embedded?.records ?? []) {
-        if (op.type !== 'invoke_host_function') continue;
-        for (const change of op.asset_balance_changes ?? []) {
-          const index = logIndex++;
-          if (change.type !== 'transfer') continue;
-          if (change.to !== service) continue;
-          if (
-            change.asset_code &&
-            change.asset_code !== facilitatorConfig.token.symbol
-          ) {
-            continue;
-          }
-
-          rows.push({
-            logIndex: index,
-            txHash: hash,
-            ledgerClosedAt: tx.created_at,
-            from: change.from,
-            to: change.to,
-            rawAmount: change.amount,
-            transactionFrom: tx.fee_account ?? tx.source_account,
-          });
+    let logIndex = 0;
+    for (const op of opsBody._embedded?.records ?? []) {
+      if (op.type !== 'invoke_host_function') continue;
+      for (const change of op.asset_balance_changes ?? []) {
+        const index = logIndex++;
+        if (change.type !== 'transfer') continue;
+        if (change.to !== service) continue;
+        if (
+          change.asset_code &&
+          change.asset_code !== facilitatorConfig.token.symbol
+        ) {
+          continue;
         }
+
+        rows.push({
+          logIndex: index,
+          txHash: hash,
+          ledgerClosedAt: tx.created_at,
+          from: change.from,
+          to: change.to,
+          rawAmount: change.amount,
+          transactionFrom: tx.fee_account ?? tx.source_account,
+        });
       }
-    } catch {
-      // Skip transactions Horizon cannot serve.
     }
   }
 
