@@ -37,7 +37,7 @@ As of 2026-09-29.
 | Area          | State                                                                                                                                                                                                                 |
 | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Indexer       | Indexes OpenZeppelin Channels settlements from public Horizon. A bug that silently dropped payments on Horizon errors was fixed in [#11](https://github.com/EmanuXBe/x402scan/pull/11)                                |
-| Coverage      | OZ Channels only. The MPP Router and self-hosted facilitators are not indexed ([#7](https://github.com/EmanuXBe/x402scan/issues/7), [#12](https://github.com/EmanuXBe/x402scan/issues/12))                            |
+| Coverage      | OZ Channels and, once [#7](https://github.com/EmanuXBe/x402scan/issues/7) merges, ROZO's MPP Router. Self-hosted facilitators are not indexed ([#12](https://github.com/EmanuXBe/x402scan/issues/12))                 |
 | Public claims | Several are wrong or stale ([#3](https://github.com/EmanuXBe/x402scan/issues/3), [#9](https://github.com/EmanuXBe/x402scan/issues/9), [#13](https://github.com/EmanuXBe/x402scan/issues/13)). Fix before any outreach |
 | Upstream      | Env flags PR opened as [Merit-Systems/x402scan#1245](https://github.com/Merit-Systems/x402scan/pull/1245). The proposal issue is drafted ([`docs/outreach/`](outreach/))                                              |
 | Repo          | This is a GitHub fork. Deciding its home is the first kickoff item ([#17](https://github.com/EmanuXBe/x402scan/issues/17))                                                                                            |
@@ -64,10 +64,12 @@ Every figure below has a date and a reproducible source. Snapshots live in [`doc
 |                             | Value                                                               |
 | --------------------------- | ------------------------------------------------------------------- |
 | Inbound USDC transfers      | 1,046, from 2026-04-10 to 2026-09-29 (still active)                 |
-| Payers                      | 27 (some are ROZO test wallets, per the Discord)                    |
-| Volume                      | 38.85 USDC, almost 5x OZ Channels                                   |
+| Payers                      | 27; 7 of them are likely ROZO test wallets (see below)              |
+| Volume                      | 38.85 USDC, almost 5x OZ Channels in raw terms                      |
 | Settled through OZ Channels | 0, so none of it is in the index                                    |
 | Fee payer                   | `GB5LCXFTBHXJ32XQBHX4EQKQPCHZRHU3XXHHN54QE3O3QTAN6RQZ3XEE` on 1,035 |
+
+Likely test traffic: the account that created the payTo (`GC56BX…Q7FD`) also funded 7 of the payers, directly or through one of them. On 2026-09-30 they accounted for 404 of 1,050 payments (38.5%) and 25.26 of 38.87 USDC (65.0%). It is an inference from account funding; ROZO has to confirm it before the router's volume is quoted as third-party demand ([snapshot](data/2026-09-30-mpp-router-payers.json), [`docs/STELLAR.md`](STELLAR.md#mpp-coverage-rozos-mpp-router)).
 
 ### 3.2 How Horizon behaves (verified, and it drives the design)
 

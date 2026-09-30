@@ -27,6 +27,9 @@ interface HorizonOperation {
   type_i: number;
   transaction_hash: string;
   created_at: string;
+  source_account: string;
+  /** Present when the request passes `join=transactions`. */
+  transaction?: HorizonTransaction;
   // invoke_host_function fields
   function?: string;
   parameters?: { type: string; value: string }[];
@@ -73,7 +76,7 @@ const MAX_RETRY_WAIT_MS = 30_000;
  *
  * A final failure must propagate to the caller and fail the whole window.
  * Skipping one transaction instead would store the rest of the window, and
- * since the cursor resumes from the newest stored transfer, the skipped
+ * since the cursor moves past every window that completes, the skipped
  * payments would never be requested again. A cold backfill makes one request
  * per relayer transaction, so a 429 from the public Horizon is expected.
  */
@@ -99,20 +102,16 @@ async function horizonFetch<T>(url: string): Promise<T> {
   }
 }
 
-function horizonGetOne<T>(url: string): Promise<T> {
-  return horizonFetch<T>(url);
-}
-
 function horizonGet<T>(url: string): Promise<HorizonPage<T>> {
   return horizonFetch<HorizonPage<T>>(url);
 }
 
 /**
- * Stellar x402 settlements are Soroban contract invocations against the USDC
- * SAC, submitted by the facilitator's relayer. Two properties make them
- * attributable, and both are needed:
+ * Stellar agentic payments are Soroban contract invocations against the USDC
+ * SAC. Two properties make them attributable, and both are needed:
  *
- *  1. The relayer is the transaction's source (or fee) account — the anchor.
+ *  1. An anchor account: the facilitator that submits or fee-bumps the
+ *     transaction (`submitter`), or the service that receives it (`recipient`).
  *  2. The operation is `invoke_host_function`, not a classic `payment`.
  *
  * The second filter matters more than it looks: a SAC mirrors its classic
@@ -120,10 +119,9 @@ function horizonGet<T>(url: string): Promise<HorizonPage<T>> {
  * Filtering on events alone sweeps in the entire classic payment volume of the
  * network. Only contract invocations are protocol-level agentic payments.
  *
- * Horizon is used rather than Soroban RPC because RPC `getTransaction` retains
- * only a short window — a scan of 4,012 transactions resolved just 61 — while
- * Horizon keeps full history and returns `asset_balance_changes` already
- * decoded, with no XDR handling required.
+ * Horizon is used rather than Soroban RPC because RPC keeps days of history,
+ * while SDF's public Horizon keeps one year and returns `asset_balance_changes`
+ * already decoded, with no XDR handling required.
  */
 export async function fetchSorobanRpc(
   config: SyncConfig,
@@ -222,52 +220,23 @@ async function fetchBySubmitter(
   return config.transformResponse(rows, config, facilitator, facilitatorConfig);
 }
 
-const DEFAULT_SOROBAN_RPC_URL = 'https://mainnet.sorobanrpc.com';
-/** Stellar closes a ledger roughly every 5 seconds. */
-const LEDGER_SECONDS = 5;
-const EVENT_PAGE_LIMIT = 200;
-const MAX_EVENT_PAGES = 40;
-
-interface SorobanEvent {
-  txHash: string;
-  ledger: number;
-  ledgerClosedAt: string;
-  topic: string[];
-  value: string;
-  inSuccessfulContractCall?: boolean;
-}
-
-async function sorobanRpc<T>(
-  url: string,
-  method: string,
-  params?: Record<string, unknown>
-): Promise<T> {
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
-  });
-  const json = (await res.json()) as { result?: T; error?: unknown };
-  if (json.error) {
-    throw new Error(`Soroban RPC ${method}: ${JSON.stringify(json.error)}`);
-  }
-  return json.result as T;
-}
-
 /**
- * Recipient-anchored discovery, for protocols like MPP Charge that settle
- * agent-to-service with no intermediary.
+ * Recipient-anchored discovery, for services such as ROZO's MPP Router that
+ * are paid directly and settled by their own submitter rather than by a
+ * registered facilitator.
  *
- * This path exists because of an indexing asymmetry in Stellar's own tooling:
- * Horizon keys transactions by source account, so a submitter anchor gets full
- * history from one paginated query — but it does NOT index contract transfers
- * by receiving account, and `/accounts/{id}/payments` returns nothing for them.
- * The only way to find "everything paid to this service" is to scan contract
- * events, which the public RPC retains for days rather than months — the exact
- * window is reported by `getHealth` and must be read, not assumed.
+ * Horizon lists an `invoke_host_function` operation under every account whose
+ * balance it changes, so `/accounts/{recipient}/operations` returns every SAC
+ * transfer credited to the service, newest first, in pages of 200. The account
+ * that only pays a fee bump is not a participant in that sense, which is why
+ * the submitter path above needs one request per transaction and this path
+ * does not: the MPP Router's full history (1,046 transfers on 2026-09-29) is
+ * six pages. `join=transactions` embeds the transaction, so the fee payer comes
+ * with each operation.
  *
- * The practical consequence is that submitter-anchored protocols are cheap to
- * index and recipient-anchored ones are not. See docs/MPP-ATTRIBUTION.md.
+ * A Soroban transaction carries exactly one operation, so counting balance
+ * changes within the operation yields the same `log_index` as the submitter
+ * path, which counts them across the transaction.
  */
 async function fetchByRecipient(
   config: SyncConfig,
@@ -276,114 +245,55 @@ async function fetchByRecipient(
   since: Date,
   now: Date
 ): Promise<TransferEventData[]> {
-  const rpcUrl = config.rpcUrl ?? DEFAULT_SOROBAN_RPC_URL;
-  const horizonUrl = config.apiUrl ?? DEFAULT_HORIZON_URL;
+  const baseUrl = config.apiUrl ?? DEFAULT_HORIZON_URL;
   const service = facilitatorConfig.address;
-  const sac = facilitatorConfig.token.address;
-
-  const health = await sorobanRpc<{
-    latestLedger: number;
-    oldestLedger: number;
-  }>(rpcUrl, 'getHealth');
-
-  const secondsBack = Math.max(0, (now.getTime() - since.getTime()) / 1000);
-  const requestedStart = Math.max(
-    1,
-    health.latestLedger - Math.ceil(secondsBack / LEDGER_SECONDS)
-  );
-
-  // getEvents rejects a startLedger outside the node's retention window, so the
-  // request has to be clamped rather than derived from the sync window alone.
-  // The two Stellar anchors are bounded by opposite things: the submitter path
-  // wants windows as wide as possible because Horizon keeps full history, while
-  // this path can never see further back than the RPC retains (7 days on
-  // mainnet.sorobanrpc.com as of 2026-08-05, per its own `ledgerRetentionWindow`
-  // — but that is a node setting, hence the runtime read). A clamp is not a fix
-  // for that gap — history older than
-  // oldestLedger is simply unobservable here, and needs Hubble or a Galexie
-  // data lake. See docs/MPP-ATTRIBUTION.md.
-  const startLedger = Math.max(requestedStart, health.oldestLedger);
-
-  if (startLedger > requestedStart) {
-    const missedLedgers = startLedger - requestedStart;
-    logger.warn(
-      `[${config.chain}] recipient anchor ${service}: requested ledger ` +
-        `${requestedStart} predates RPC retention (oldest ${health.oldestLedger}); ` +
-        `${missedLedgers} ledgers (~${Math.round(
-          (missedLedgers * LEDGER_SECONDS) / 3600
-        )}h) of this window cannot be observed`
-    );
-  }
+  const { symbol } = facilitatorConfig.token;
 
   logger.log(
-    `[${config.chain}] recipient anchor ${service}: scanning events from ledger ${startLedger}`
+    `[${config.chain}] Horizon: operations crediting ${service} in ${since.toISOString()}..${now.toISOString()}`
   );
 
-  const candidateHashes = new Set<string>();
-  let cursor: string | undefined;
-
-  for (let page = 0; page < MAX_EVENT_PAGES; page++) {
-    const filters = [{ type: 'contract', contractIds: [sac] }];
-    const params = cursor
-      ? { filters, pagination: { cursor, limit: EVENT_PAGE_LIMIT } }
-      : { startLedger, filters, pagination: { limit: EVENT_PAGE_LIMIT } };
-
-    const result = await sorobanRpc<{
-      events?: SorobanEvent[];
-      cursor?: string;
-    }>(rpcUrl, 'getEvents', params);
-
-    const events = result.events ?? [];
-    for (const event of events) {
-      if (event.inSuccessfulContractCall === false) continue;
-      candidateHashes.add(event.txHash);
-    }
-    cursor = result.cursor;
-    if (events.length < EVENT_PAGE_LIMIT || !cursor) break;
-  }
-
-  logger.log(
-    `[${config.chain}] ${candidateHashes.size} candidate transactions in RPC retention window`
-  );
-
-  // Resolve each candidate through Horizon and keep only contract invocations
-  // that credited this service.
   const rows: SorobanTransferRow[] = [];
+  let url =
+    `${baseUrl}/accounts/${service}/operations` +
+    `?order=desc&limit=${PAGE_LIMIT}&include_failed=false&join=transactions`;
 
-  for (const hash of candidateHashes) {
-    // No try/catch, for the same reason as the submitter path.
-    const [tx, opsBody] = await Promise.all([
-      horizonGetOne<HorizonTransaction>(`${horizonUrl}/transactions/${hash}`),
-      horizonGet<HorizonOperation>(
-        `${horizonUrl}/transactions/${hash}/operations?limit=${PAGE_LIMIT}`
-      ),
-    ]);
+  outer: for (let page = 0; page < MAX_PAGES; page++) {
+    const body = await horizonGet<HorizonOperation>(url);
+    const records = body._embedded?.records ?? [];
+    if (records.length === 0) break;
 
-    let logIndex = 0;
-    for (const op of opsBody._embedded?.records ?? []) {
+    for (const op of records) {
+      const at = new Date(op.created_at);
+      if (at < since) break outer;
+      if (at > now) continue;
       if (op.type !== 'invoke_host_function') continue;
+
+      let logIndex = 0;
       for (const change of op.asset_balance_changes ?? []) {
         const index = logIndex++;
         if (change.type !== 'transfer') continue;
         if (change.to !== service) continue;
-        if (
-          change.asset_code &&
-          change.asset_code !== facilitatorConfig.token.symbol
-        ) {
-          continue;
-        }
+        if (change.asset_code && change.asset_code !== symbol) continue;
 
         rows.push({
           logIndex: index,
-          txHash: hash,
-          ledgerClosedAt: tx.created_at,
+          txHash: op.transaction_hash,
+          ledgerClosedAt: op.created_at,
           from: change.from,
           to: change.to,
           rawAmount: change.amount,
-          transactionFrom: tx.fee_account ?? tx.source_account,
+          transactionFrom:
+            op.transaction?.fee_account ??
+            op.transaction?.source_account ??
+            op.source_account,
         });
       }
     }
+
+    const next = body._links?.next?.href;
+    if (!next) break;
+    url = next;
   }
 
   logger.log(

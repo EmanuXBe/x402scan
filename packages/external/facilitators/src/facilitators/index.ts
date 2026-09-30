@@ -31,3 +31,4 @@ export { cascade, cascadeFacilitator } from './cascade';
 export { fluxa, fluxaFacilitator } from './fluxa';
 export { figment, figmentFacilitator } from './figment';
 export { openzeppelinFacilitator } from './openzeppelin';
+export { rozoFacilitator } from './rozo';
