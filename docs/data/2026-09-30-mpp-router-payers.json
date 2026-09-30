@@ -1,0 +1,341 @@
+{
+  "asOf": "2026-09-30T04:39:12.977Z",
+  "requests": 23,
+  "payers": 27,
+  "contractPayers": 11,
+  "fundedByRozo": 0,
+  "paymentsFromRozoFunded": 0,
+  "funders": [
+    [
+      "GC56BXCNEWL6JSGKHD3RJ5HJRNKFEJQ53D3YY3SMD6XK7YPDI75BQ7FD",
+      5
+    ],
+    [
+      "GDKRFEUYXXGGGWWRHLQNV4ZAWT5SPJJAH57OTHP4OQENVBJP2CP7TFHI",
+      2
+    ],
+    [
+      "GDATMUNQEPN4TPETV47LAKGJELK4DUHHDRPMGD3K5LOHUPXX2DI623KY",
+      2
+    ],
+    [
+      "GAK67E2ZPVO7S2ALE3M6RT5HKWLKOMWIYNCOIKIMXSBUV5RRRQI7B7K7",
+      2
+    ],
+    [
+      "GB5FUSCVVV7ZLKJVL7FRCSBQHZXYLMSWWXXYC7NH35GV57S5XWKEVA4V",
+      1
+    ],
+    [
+      "GAA3PV4SN4AEFGYXTHLO7X4ETQEM6PERUJN2NGRGMKEHNJSYYTIFMM5S",
+      1
+    ],
+    [
+      "GAAIBWG3M3U6PAS3IC5BATPT52XKNYXBRJXQIPHEDQUQIEFQDYH4KZY7",
+      1
+    ],
+    [
+      "GC2MW6GN67G74B6KXFLR3OTF35QB5KY75IKBY3QXSPLQNCQ7YH27JBSQ",
+      1
+    ]
+  ],
+  "rows": [
+    {
+      "payer": "GD5R4HTO5Y22ZNBD2ZZDJHFYN5JDYHDHG3VINLPM2ZU7HCIHUMI2BB4U",
+      "kind": "account",
+      "payments": 245,
+      "usdc": 2.0406,
+      "first": "2026-07-29T08:49:21Z",
+      "last": "2026-09-23T13:54:33Z",
+      "createdBy": "GC56BXCNEWL6JSGKHD3RJ5HJRNKFEJQ53D3YY3SMD6XK7YPDI75BQ7FD",
+      "createdAt": "2026-07-03T06:51:41Z",
+      "fundedByRozo": false
+    },
+    {
+      "payer": "GBY5YBVBXOA5HGEOVGTUMCLUUMXCQYCRJSG5NTPA3WI7VSFJBIMGCBQD",
+      "kind": "account",
+      "payments": 209,
+      "usdc": 1.045,
+      "first": "2026-09-02T21:09:24Z",
+      "last": "2026-09-30T04:00:52Z",
+      "createdBy": "GB5FUSCVVV7ZLKJVL7FRCSBQHZXYLMSWWXXYC7NH35GV57S5XWKEVA4V",
+      "createdAt": "2026-09-02T20:04:51Z",
+      "fundedByRozo": false
+    },
+    {
+      "payer": "GADF6WGNQSWNU7BPKCSFRJ75Y7XGABZWCW3356VIA7OUMZZHSQVB3ZJR",
+      "kind": "account",
+      "payments": 198,
+      "usdc": 1.3712,
+      "first": "2026-06-03T16:49:30Z",
+      "last": "2026-08-17T14:46:26Z",
+      "createdBy": "GDKRFEUYXXGGGWWRHLQNV4ZAWT5SPJJAH57OTHP4OQENVBJP2CP7TFHI",
+      "createdAt": "2026-06-03T14:51:14Z",
+      "fundedByRozo": false
+    },
+    {
+      "payer": "GDCO2AKYBSLN34OFHAVUKCN3WIF6YEPMQOTEXM672HE7R3HD6LB67K4H",
+      "kind": "account",
+      "payments": 153,
+      "usdc": 2.8016,
+      "first": "2026-05-09T14:49:37Z",
+      "last": "2026-06-25T17:05:40Z",
+      "createdBy": "GDKRFEUYXXGGGWWRHLQNV4ZAWT5SPJJAH57OTHP4OQENVBJP2CP7TFHI",
+      "createdAt": "2026-05-09T14:44:08Z",
+      "fundedByRozo": false
+    },
+    {
+      "payer": "GAN3YSPDH5VW7YFJJFUJH7LIYTJBWGH3GJMKOG6FP5RKHXGNMPX44UYY",
+      "kind": "account",
+      "payments": 138,
+      "usdc": 23.0402,
+      "first": "2026-04-11T18:09:03Z",
+      "last": "2026-06-24T03:12:05Z",
+      "createdBy": "GC56BXCNEWL6JSGKHD3RJ5HJRNKFEJQ53D3YY3SMD6XK7YPDI75BQ7FD",
+      "createdAt": "2026-03-06T02:20:09Z",
+      "fundedByRozo": false
+    },
+    {
+      "payer": "GDOOBI5HMUAXYF3QWGAPPY5MK3IPMHRA6LAXWAUZGA6H4FTZQUJNJU56",
+      "kind": "account",
+      "payments": 54,
+      "usdc": 0.8888,
+      "first": "2026-07-30T01:17:50Z",
+      "last": "2026-08-21T15:28:49Z",
+      "createdBy": "GDATMUNQEPN4TPETV47LAKGJELK4DUHHDRPMGD3K5LOHUPXX2DI623KY",
+      "createdAt": "2026-06-11T11:07:06Z",
+      "fundedByRozo": false
+    },
+    {
+      "payer": "GDATMUNQEPN4TPETV47LAKGJELK4DUHHDRPMGD3K5LOHUPXX2DI623KY",
+      "kind": "account",
+      "payments": 14,
+      "usdc": 2.297,
+      "first": "2026-05-09T15:22:54Z",
+      "last": "2026-05-20T17:05:16Z",
+      "createdBy": "GAA3PV4SN4AEFGYXTHLO7X4ETQEM6PERUJN2NGRGMKEHNJSYYTIFMM5S",
+      "createdAt": "2025-09-01T08:21:24Z",
+      "fundedByRozo": false
+    },
+    {
+      "payer": "GAIK5OR2FY4MVXVL4AZDJLAJT3MIJ5I6PAYARB2CATRRVACWFI7C6NHW",
+      "kind": "account",
+      "payments": 12,
+      "usdc": 0.0318,
+      "first": "2026-07-31T00:45:03Z",
+      "last": "2026-08-21T10:57:08Z",
+      "createdBy": "GC56BXCNEWL6JSGKHD3RJ5HJRNKFEJQ53D3YY3SMD6XK7YPDI75BQ7FD",
+      "createdAt": "2026-07-31T00:43:06Z",
+      "fundedByRozo": false
+    },
+    {
+      "payer": "GAK67E2ZPVO7S2ALE3M6RT5HKWLKOMWIYNCOIKIMXSBUV5RRRQI7B7K7",
+      "kind": "account",
+      "payments": 5,
+      "usdc": 0.0115,
+      "first": "2026-04-10T07:03:57Z",
+      "last": "2026-05-08T01:53:58Z",
+      "createdBy": "GC56BXCNEWL6JSGKHD3RJ5HJRNKFEJQ53D3YY3SMD6XK7YPDI75BQ7FD",
+      "createdAt": "2026-04-09T02:11:20Z",
+      "fundedByRozo": false
+    },
+    {
+      "payer": "GCRS63JEC7GRT5PVC6H3ONCST7Q6KVUWLQE6672KRXHVHCVPYD7VGXNN",
+      "kind": "account",
+      "payments": 3,
+      "usdc": 0.01,
+      "first": "2026-09-15T11:34:16Z",
+      "last": "2026-09-17T15:52:33Z",
+      "createdBy": null,
+      "createdAt": null,
+      "fundedByRozo": null
+    },
+    {
+      "payer": "GDK3AVW3YE6UL3J4WLNKBMP65KSY32YPUKIOC6PXW65XJ3LEG3YIDXXB",
+      "kind": "account",
+      "payments": 2,
+      "usdc": 0.133,
+      "first": "2026-05-08T02:32:26Z",
+      "last": "2026-05-08T02:35:25Z",
+      "createdBy": "GC56BXCNEWL6JSGKHD3RJ5HJRNKFEJQ53D3YY3SMD6XK7YPDI75BQ7FD",
+      "createdAt": "2026-04-09T13:22:21Z",
+      "fundedByRozo": false
+    },
+    {
+      "payer": "GC2NIKT6TWLMBZE4TU5ZMMDVV22URFIMJIZ4JYUC3QABBBWNGGZMAFGM",
+      "kind": "account",
+      "payments": 2,
+      "usdc": 0.004,
+      "first": "2026-08-17T08:50:43Z",
+      "last": "2026-08-17T08:55:27Z",
+      "createdBy": "GAAIBWG3M3U6PAS3IC5BATPT52XKNYXBRJXQIPHEDQUQIEFQDYH4KZY7",
+      "createdAt": "2026-04-13T22:15:20Z",
+      "fundedByRozo": false
+    },
+    {
+      "payer": "GARVYIEYTJRRASP6T6GUIV4US4ZUTHO7ZVBQMVM3AJU6JSE6GADZFE3G",
+      "kind": "account",
+      "payments": 1,
+      "usdc": 0.002,
+      "first": "2026-04-11T06:20:56Z",
+      "last": "2026-04-11T06:20:56Z",
+      "createdBy": "GAK67E2ZPVO7S2ALE3M6RT5HKWLKOMWIYNCOIKIMXSBUV5RRRQI7B7K7",
+      "createdAt": "2026-04-11T06:13:59Z",
+      "fundedByRozo": false
+    },
+    {
+      "payer": "GB5XRI6UOVZNBH5C354GHEXJRM4YRB4UO5KOOSIQDFIW7FAHE6FKMQFK",
+      "kind": "account",
+      "payments": 1,
+      "usdc": 0.002,
+      "first": "2026-04-11T06:21:50Z",
+      "last": "2026-04-11T06:21:50Z",
+      "createdBy": "GAK67E2ZPVO7S2ALE3M6RT5HKWLKOMWIYNCOIKIMXSBUV5RRRQI7B7K7",
+      "createdAt": "2026-04-11T06:13:59Z",
+      "fundedByRozo": false
+    },
+    {
+      "payer": "GDKNA24CUAXW6PTON3IDJKLW4LZTJEHW3OT7WAHJGGE3IX55FQ22LPJ2",
+      "kind": "account",
+      "payments": 1,
+      "usdc": 0.005,
+      "first": "2026-05-09T13:18:24Z",
+      "last": "2026-05-09T13:18:24Z",
+      "createdBy": "GDATMUNQEPN4TPETV47LAKGJELK4DUHHDRPMGD3K5LOHUPXX2DI623KY",
+      "createdAt": "2026-05-09T13:12:06Z",
+      "fundedByRozo": false
+    },
+    {
+      "payer": "CAFJQEDSZCNVSORWG6NYB4XGUGRALHLUY4YTGSVNO4XYT3W3JDTXDE6B",
+      "kind": "contract",
+      "payments": 1,
+      "usdc": 0.5,
+      "first": "2026-08-13T11:40:16Z",
+      "last": "2026-08-13T11:40:16Z",
+      "createdBy": null,
+      "createdAt": null,
+      "fundedByRozo": null
+    },
+    {
+      "payer": "CADTIMOXALJ3AZOXWCMAQ4UXHS6AHB4ZBUIOE5HBZICND2SZ7GXDKSUN",
+      "kind": "contract",
+      "payments": 1,
+      "usdc": 0.5,
+      "first": "2026-08-13T13:20:18Z",
+      "last": "2026-08-13T13:20:18Z",
+      "createdBy": null,
+      "createdAt": null,
+      "fundedByRozo": null
+    },
+    {
+      "payer": "CBNQZUH6PMAPRADL2PFN572YQXJVFIAJGKERRTGO7DUZWE5UO4BMN5EP",
+      "kind": "contract",
+      "payments": 1,
+      "usdc": 0.289,
+      "first": "2026-08-13T13:28:58Z",
+      "last": "2026-08-13T13:28:58Z",
+      "createdBy": null,
+      "createdAt": null,
+      "fundedByRozo": null
+    },
+    {
+      "payer": "GCOV2ENPXHRD2QM7WPBOIDVE7FWOZYPV4CYEECHOIEDJB3AQ36EM5XEU",
+      "kind": "account",
+      "payments": 1,
+      "usdc": 0.001,
+      "first": "2026-09-04T03:59:52Z",
+      "last": "2026-09-04T03:59:52Z",
+      "createdBy": "GC2MW6GN67G74B6KXFLR3OTF35QB5KY75IKBY3QXSPLQNCQ7YH27JBSQ",
+      "createdAt": "2026-09-04T02:56:24Z",
+      "fundedByRozo": false
+    },
+    {
+      "payer": "CACNZCT72S5FH3YZY6F6UTF2V3EJN4GLMPQKBKNGXSPFG54WK2P2QLCN",
+      "kind": "contract",
+      "payments": 1,
+      "usdc": 0.489,
+      "first": "2026-09-15T03:03:07Z",
+      "last": "2026-09-15T03:03:07Z",
+      "createdBy": null,
+      "createdAt": null,
+      "fundedByRozo": null
+    },
+    {
+      "payer": "CATQR2DNNLWHF6C4FQPXH2CR2X4IPHPQSQAU2JRR67MCXFTIOPMDOM35",
+      "kind": "contract",
+      "payments": 1,
+      "usdc": 0.5,
+      "first": "2026-09-15T03:12:49Z",
+      "last": "2026-09-15T03:12:49Z",
+      "createdBy": null,
+      "createdAt": null,
+      "fundedByRozo": null
+    },
+    {
+      "payer": "CBM27E2E3IW2ULIM3DCLGEC7L2QPMVGTVCIPMJ52JNUEYUA376KNNTJU",
+      "kind": "contract",
+      "payments": 1,
+      "usdc": 0.5,
+      "first": "2026-09-15T03:13:16Z",
+      "last": "2026-09-15T03:13:16Z",
+      "createdBy": null,
+      "createdAt": null,
+      "fundedByRozo": null
+    },
+    {
+      "payer": "CDY26IR7EGSB4YOJVQ77QAO2QZBKIVPWULTUPKJIK4BMC3WADVOLFIU6",
+      "kind": "contract",
+      "payments": 1,
+      "usdc": 0.489,
+      "first": "2026-09-15T03:27:15Z",
+      "last": "2026-09-15T03:27:15Z",
+      "createdBy": null,
+      "createdAt": null,
+      "fundedByRozo": null
+    },
+    {
+      "payer": "CDGF5GHQUTY6FCGTSCQNQWUVH42CJQ6UWQKZSXP5EW3PC2KD3J5G6HDW",
+      "kind": "contract",
+      "payments": 1,
+      "usdc": 0.489,
+      "first": "2026-09-15T03:29:14Z",
+      "last": "2026-09-15T03:29:14Z",
+      "createdBy": null,
+      "createdAt": null,
+      "fundedByRozo": null
+    },
+    {
+      "payer": "CBYVBBYMIYUXIGW7Z4SJRQOWVZ4KZ6INPBAQXGHV6XR6KXLMQEZ2LX7O",
+      "kind": "contract",
+      "payments": 1,
+      "usdc": 0.5,
+      "first": "2026-09-15T03:38:09Z",
+      "last": "2026-09-15T03:38:09Z",
+      "createdBy": null,
+      "createdAt": null,
+      "fundedByRozo": null
+    },
+    {
+      "payer": "CBZASTASMB5B5KLX3HZEQJJ3R27ERW3GIHOMH6MHMXKBGAT5U465AHTO",
+      "kind": "contract",
+      "payments": 1,
+      "usdc": 0.467,
+      "first": "2026-09-15T03:41:13Z",
+      "last": "2026-09-15T03:41:13Z",
+      "createdBy": null,
+      "createdAt": null,
+      "fundedByRozo": null
+    },
+    {
+      "payer": "CAGLU7V2R2T3B5QC37Q7D3MCAJEMFTUDGQMPRVF56EDWU6WL22ACIFXY",
+      "kind": "contract",
+      "payments": 1,
+      "usdc": 0.467,
+      "first": "2026-09-15T04:47:10Z",
+      "last": "2026-09-15T04:47:10Z",
+      "createdBy": null,
+      "createdAt": null,
+      "fundedByRozo": null
+    }
+  ]
+}

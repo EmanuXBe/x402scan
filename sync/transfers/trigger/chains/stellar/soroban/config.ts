@@ -24,11 +24,10 @@ export const stellarSorobanConfig: SyncConfig = {
   // so the task could never finish a backfill. At 30 days it is ~6 windows,
   // and a steady-state 15-minute run is a single window and a single page.
   //
-  // A cold backfill is still slower than maxDuration, because operations are
-  // fetched one transaction at a time (~26 min for 2,590). That is survivable
-  // rather than fixed: each window persists before the next begins, and the
-  // cursor is the newest stored transfer, so a timed-out run resumes where it
-  // stopped and the backfill completes over a handful of scheduled runs.
+  // A cold backfill of a submitter anchor is still slower than maxDuration,
+  // because operations are fetched one transaction at a time (~26 min for
+  // 2,590). Run those from the CLI (`pnpm sync:once --chain stellar`); the
+  // scheduled task only has to keep up. Recipient anchors are cheap either way.
   timeWindowInMs: ONE_DAY_IN_MS * 30,
   limit: 5_000,
   facilitators: FACILITATORS_BY_CHAIN(Network.STELLAR),
@@ -36,4 +35,10 @@ export const stellarSorobanConfig: SyncConfig = {
   transformResponse,
   enabled: true,
   machine: 'small-1x',
+  // The shared cursor, keyed by facilitator and anchor address and advanced
+  // after every window. The newest-stored-transfer cursor cannot serve a
+  // recipient anchor: it looks transfers up by `transaction_from`, which for a
+  // recipient anchor is the service's fee payer, never the anchor itself, so
+  // every run would restart at syncStartDate.
+  useSyncState: true,
 };

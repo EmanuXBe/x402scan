@@ -65,11 +65,30 @@ async function getBootstrapCursor(
     },
   });
 
+  // A config that turns on sync state after it has already been storing
+  // transfers resumes from its own newest one instead of backfilling again.
+  const mostRecentOwnTransfer = await getTransferEvents({
+    orderBy: { block_timestamp: 'desc' },
+    take: 1,
+    where: {
+      address: normalizeAddress(
+        syncConfig.chain,
+        facilitatorConfig.token.address
+      ),
+      chain: syncConfig.chain,
+      transaction_from: transactionFrom,
+      provider: syncConfig.provider,
+    },
+  });
+
   const candidates = [
     facilitatorConfig.syncStartDate,
     syncConfig.syncStateCutoverAt,
     mostRecentCdpTransfer[0]?.block_timestamp
       ? new Date(mostRecentCdpTransfer[0].block_timestamp.getTime() + 1000)
+      : undefined,
+    mostRecentOwnTransfer[0]?.block_timestamp
+      ? new Date(mostRecentOwnTransfer[0].block_timestamp.getTime() + 1000)
       : undefined,
   ].filter((date): date is Date => date !== undefined);
 

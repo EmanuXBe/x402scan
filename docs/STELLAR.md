@@ -43,15 +43,15 @@ The query is facilitator-first — walk `/accounts/{relayer}/transactions` and p
 
 The plan was [Hubble](https://developers.stellar.org/docs/data/analytics/hubble), the Stellar Development Foundation's public BigQuery dataset (`crypto-stellar.crypto_stellar`), reusing `QueryProvider.BIGQUERY` rather than introducing a new provider — `sync/transfers/trigger/fetch/bigquery/fetch.ts` is generic, so the dataset would have lived inside the SQL string returned by `buildQuery` and no dispatch case would have been needed.
 
-It was dropped because **Horizon already keeps full history for the submitter anchor**, and it keeps it for free. Hubble buys nothing for x402 on Stellar: the relayer's entire history is 2,590 transactions across 14 paginated requests, about 8.5 seconds, with no credentials and no GCP project.
+It was dropped because Horizon covers today's anchors for free, with no credentials and no GCP project. The OZ Channels relayer's first transaction (2026-03-06) is inside public Horizon's one-year window; its transaction list is 14 requests, and operations add one request per transaction (2,654 in total on 2026-09-29).
 
-Hubble becomes necessary at exactly one boundary — the recipient anchor. Horizon does not index contract transfers by receiving account, so "everything paid to this service" cannot be answered from it at all. That is the MPP Charge case, and it is documented in [MPP-ATTRIBUTION.md](MPP-ATTRIBUTION.md) rather than solved here.
+Hubble becomes necessary at two boundaries: history older than public Horizon's one-year window, and backfills where one request per transaction is too slow. The recipient anchor is not one of them. Horizon lists every SAC transfer under its recipient, so "everything paid to this service" is one paginated query (verified 2026-09-29, see [MPP coverage](#mpp-coverage-rozos-mpp-router)).
 
 ### Why not Soroban RPC for history
 
 RPC `getEvents` works for recent data and needs no credentials, which makes it tempting as the primary source. Its retention window rules that out: 7 days on `mainnet.sorobanrpc.com` as of 2026-08-05 (`ledgerRetentionWindow: 120960`), and configurable per instance. Query `getHealth` for the real figure rather than trusting the widely repeated "24 hours" — it is wrong for the public endpoint.
 
-RPC is still used, but only where its retention is not the binding constraint: `fetchByRecipient` calls `getEvents` to shortlist candidate transactions, then resolves each one through Horizon. Horizon serves every stored row on both paths, which is why `QueryProvider.HORIZON` is what lands in `TransferEvent.provider`.
+Nothing in the adapter calls RPC anymore. The recipient path used `getEvents` until 2026-09-29; it now reads Horizon's operations stream, which reaches back a year instead of a week. Horizon serves every stored row on both paths, which is why `QueryProvider.HORIZON` is what lands in `TransferEvent.provider`.
 
 ## Integration traps
 
@@ -73,15 +73,15 @@ Without the fix, the sync cursor would never match the stored record and the syn
 
 `CHAIN_ID` maps chains to EVM integers. Stellar uses `0`, following Solana's precedent. Real identification is CAIP-2: `stellar:pubnet` and `stellar:testnet`, resolved in `apps/scan/src/lib/x402/chain-mapping.ts`.
 
-## MPP Charge coverage — none, deliberately
+## MPP coverage: ROZO's MPP Router
 
-**No MPP service is registered and no MPP payment is indexed.** The code path exists — `fetchByRecipient` handles a recipient anchor, and `FacilitatorConfig.anchor` selects it — but no facilitator entry uses it.
+ROZO's [MPP Router](https://github.com/mpprouter/rozo-mpprouter) (`rozo` in the facilitator registry) is indexed through a recipient anchor on its payTo, `GDK3AVW3YE6UL3J4WLNKBMP65KSY32YPUKIOC6PXW65XJ3LEG3YIDXXB`. `fetchByRecipient` walks `/accounts/{payTo}/operations?join=transactions` newest first and keeps the `invoke_host_function` USDC transfers credited to it. ROZO submits and fee-bumps these itself; none go through OZ Channels.
 
-The mechanism was never the obstacle. An MPP Charge payment is a SAC transfer to a known address, so the same `transformResponse` covers it and only the registered address differs. What is missing is the address: there is no directory of MPP services to read one from, and we found no MPP Charge traffic on mainnet to attribute.
+As of 2026-09-30 04:39 UTC: 1,050 transfers, 38.87 USDC and 27 payers since 2026-04-10 ([snapshot](data/2026-09-30-mpp-router-payers.json)).
 
-Registering a service of our own was the obvious move and we did not make it. It would have meant deploying an MPP endpoint, paying it from our own agent, and reporting the result as MPP support — one address in the registry, one real number on the dashboard, and a measurement of nobody but ourselves. The gap is documented in [MPP-ATTRIBUTION.md](MPP-ATTRIBUTION.md) instead, along with what closing it would actually take.
+**Likely test traffic.** On the Stellar #x402 Discord, ROZO said some payers are its own test wallets, and account funding points the same way. The account that created the payTo, `GC56BXCNEWL6JSGKHD3RJ5HJRNKFEJQ53D3YY3SMD6XK7YPDI75BQ7FD`, also created four payers, one of which created two more. With the payTo's own two self-payments, that family is 7 payers, 404 payments (38.5%) and 25.26 USDC (65.0%). This is an inference from who funded each account, not a confirmation. Everything is indexed; confirm the list with ROZO before quoting the router's volume as third-party demand.
 
-If you do register one, note the shape problem first: the registry is built around `Facilitator`, and an MPP service is not a facilitator — there is no intermediary. Keying a pseudo-facilitator on its `recipient` address requires no schema change and would work, but it is not the design to propose upstream. A separate service registry is.
+**Registry shape.** The registry is built around `Facilitator`, and the MPP Router is not an x402 facilitator. Registering it as one with `anchor: 'recipient'` needs no schema change and works for this fork. Upstream, a separate service registry is the better design. Its logo (`apps/scan/public/rozo.svg`) is a neutral placeholder until ROZO provides one.
 
 ## Boundary with the wallet
 
@@ -114,7 +114,7 @@ MV grouping by `chain` means Stellar rows flow into every dashboard aggregate wi
 
 ## Environment variables
 
-**None.** Stellar adds no new configuration to `env.ts` and needs no credentials — Horizon and Soroban RPC are both public and unauthenticated, and their endpoints are optional `SyncConfig` fields (`apiUrl`, `rpcUrl`) that default to `horizon.stellar.org` and `mainnet.sorobanrpc.com`.
+**None.** Stellar adds no new configuration to `env.ts` and needs no credentials. Horizon is public and unauthenticated, and its endpoint is an optional `SyncConfig` field (`apiUrl`) that defaults to `horizon.stellar.org`.
 
 This is worth stating because it is the exception. Base needs CDP keys, Solana's adapters need BigQuery credentials, and both fail closed without them. A Stellar backfill runs from a clean checkout.
 

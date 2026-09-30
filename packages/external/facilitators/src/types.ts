@@ -28,14 +28,13 @@ export interface FacilitatorMetadata {
 /**
  * How an on-chain address identifies payments belonging to this entity.
  *
- * `submitter` — the address submits (and usually sponsors) the transaction, as
- * an x402 facilitator relayer does. Cheap to index: block explorers key
- * transactions by source account, so full history is one paginated query.
+ * `submitter`: the address submits or fee-bumps the transaction, as an x402
+ * facilitator does. On Stellar, Horizon lists the transactions of a fee-bump
+ * payer but not their operations, so each payment costs one extra request.
  *
- * `recipient` — the address only receives, as an MPP Charge service does. There
- * is no intermediary to key on, and Horizon does not index contract transfers
- * by receiving account, so discovery falls back to scanning contract events
- * within the RPC retention window.
+ * `recipient`: the address receives the payment, as a service paid directly
+ * does (for example, an MPP Charge service). Horizon lists every SAC transfer
+ * under its recipient, so full history is one paginated query.
  */
 export type AttributionAnchor = 'submitter' | 'recipient';
 
