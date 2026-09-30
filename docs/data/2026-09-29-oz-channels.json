@@ -1,0 +1,54 @@
+{
+  "asOf": "2026-09-29T20:01:34.386Z",
+  "requests": 2654,
+  "relayerTransactions": 2640,
+  "failedLookups": 0,
+  "failed": [],
+  "payments": 2572,
+  "transactionsWithPayment": 2572,
+  "buyers": 41,
+  "sellers": 25,
+  "volumeUSDC": 7.95,
+  "nonCircleUSDC": 0,
+  "firstPayment": "2026-03-06T16:51:25Z",
+  "lastPayment": "2026-09-29T04:06:56Z",
+  "topSellers": [
+    {
+      "address": "GB3Y5MRJQLWQ2GFX2TW5ZM6JZHNDYHUDAFYL6XN3DPBNB6WG2N3H54CV",
+      "payments": 1581,
+      "share": "61.5%",
+      "busiestDay": "2026-05-02",
+      "onBusiestDay": 1574,
+      "lastPayment": "2026-05-18T09:03:47Z",
+      "silentDays": 134
+    },
+    {
+      "address": "GADNXXTGVHHY5WYGT5MGZRWJD7O7O3MLIER56NK4C4CBOJV7D73Y255B",
+      "payments": 346,
+      "share": "13.5%",
+      "busiestDay": "2026-03-16",
+      "onBusiestDay": 236,
+      "lastPayment": "2026-03-20T12:28:54Z",
+      "silentDays": 193
+    },
+    {
+      "address": "GALTZGEFPOCHM5QPUDW7RXTJIDBHRUBCVDEKPPRF5FPEXX2LLKK52MSO",
+      "payments": 289,
+      "share": "11.2%",
+      "busiestDay": "2026-03-16",
+      "onBusiestDay": 64,
+      "lastPayment": "2026-09-16T10:34:40Z",
+      "silentDays": 13
+    }
+  ],
+  "last7Days": {
+    "payments": 13,
+    "sellers": 3,
+    "buyers": 3
+  },
+  "last30Days": {
+    "payments": 26,
+    "sellers": 4,
+    "buyers": 6
+  }
+}

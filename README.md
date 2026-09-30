@@ -1,3 +1,7 @@
+> **StellarScan** is a fork of x402scan that indexes agentic payments (x402 and MPP) on Stellar.
+> Start with [`docs/ROADMAP.md`](docs/ROADMAP.md), then [`CONTRIBUTING.md`](CONTRIBUTING.md) and [`docs/STELLAR.md`](docs/STELLAR.md).
+> Everything below this box is the upstream x402scan README.
+
 <div align="center">
 
 # x402scan
