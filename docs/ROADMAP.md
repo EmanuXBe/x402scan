@@ -36,10 +36,10 @@ As of 2026-09-29.
 
 | Area          | State                                                                                                                                                                                                                 |
 | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Indexer       | Indexes OpenZeppelin Channels settlements from public Horizon. A bug that silently dropped payments on Horizon errors is fixed in [#11](https://github.com/EmanuXBe/x402scan/pull/11), pending merge                  |
+| Indexer       | Indexes OpenZeppelin Channels settlements from public Horizon. A bug that silently dropped payments on Horizon errors was fixed in [#11](https://github.com/EmanuXBe/x402scan/pull/11)                                |
 | Coverage      | OZ Channels only. The MPP Router and self-hosted facilitators are not indexed ([#7](https://github.com/EmanuXBe/x402scan/issues/7), [#12](https://github.com/EmanuXBe/x402scan/issues/12))                            |
 | Public claims | Several are wrong or stale ([#3](https://github.com/EmanuXBe/x402scan/issues/3), [#9](https://github.com/EmanuXBe/x402scan/issues/9), [#13](https://github.com/EmanuXBe/x402scan/issues/13)). Fix before any outreach |
-| Upstream      | Nothing sent yet. The env flags PR is ready locally; the proposal issue is drafted ([`docs/outreach/`](outreach/))                                                                                                    |
+| Upstream      | Env flags PR opened as [Merit-Systems/x402scan#1245](https://github.com/Merit-Systems/x402scan/pull/1245). The proposal issue is drafted ([`docs/outreach/`](outreach/))                                              |
 | Repo          | This is a GitHub fork. Deciding its home is the first kickoff item ([#17](https://github.com/EmanuXBe/x402scan/issues/17))                                                                                            |
 
 ## 3. What the evidence says
@@ -115,15 +115,15 @@ Four areas, each with a label: `area: indexer`, `area: docs`, `area: upstream`, 
 
 The index loses nothing, reaches the anchors it can see today, and every claim is correct.
 
-| Issue                                                                                                                                                           | What                                                |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| [#2](https://github.com/EmanuXBe/x402scan/issues/2) / [#11](https://github.com/EmanuXBe/x402scan/pull/11)                                                       | Stop dropping payments on Horizon errors (PR ready) |
-| [#7](https://github.com/EmanuXBe/x402scan/issues/7)                                                                                                             | Index the MPP Router through the recipient anchor   |
-| [#4](https://github.com/EmanuXBe/x402scan/issues/4)                                                                                                             | Use the shared sync state                           |
-| [#6](https://github.com/EmanuXBe/x402scan/issues/6)                                                                                                             | Rename the adapter to Horizon                       |
-| [#8](https://github.com/EmanuXBe/x402scan/issues/8)                                                                                                             | Unit tests for the transform                        |
-| [#3](https://github.com/EmanuXBe/x402scan/issues/3), [#9](https://github.com/EmanuXBe/x402scan/issues/9), [#13](https://github.com/EmanuXBe/x402scan/issues/13) | Fix docs, figures and contradicted claims           |
-| [#18](https://github.com/EmanuXBe/x402scan/issues/18)                                                                                                           | Make `pnpm check` pass on `main` (knip)             |
+| Issue                                                                                                                                                           | What                                              |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| [#2](https://github.com/EmanuXBe/x402scan/issues/2) / [#11](https://github.com/EmanuXBe/x402scan/pull/11)                                                       | Stop dropping payments on Horizon errors (merged) |
+| [#7](https://github.com/EmanuXBe/x402scan/issues/7)                                                                                                             | Index the MPP Router through the recipient anchor |
+| [#4](https://github.com/EmanuXBe/x402scan/issues/4)                                                                                                             | Use the shared sync state                         |
+| [#6](https://github.com/EmanuXBe/x402scan/issues/6)                                                                                                             | Rename the adapter to Horizon                     |
+| [#8](https://github.com/EmanuXBe/x402scan/issues/8)                                                                                                             | Unit tests for the transform                      |
+| [#3](https://github.com/EmanuXBe/x402scan/issues/3), [#9](https://github.com/EmanuXBe/x402scan/issues/9), [#13](https://github.com/EmanuXBe/x402scan/issues/13) | Fix docs, figures and contradicted claims         |
+| [#18](https://github.com/EmanuXBe/x402scan/issues/18)                                                                                                           | Make `pnpm check` pass on `main` (knip)           |
 
 ### M2 · Upstream proposal
 
@@ -152,7 +152,7 @@ M1 and the env flags PR run in parallel. The proposal issue goes out once M1's c
 
 | Step | Content                                                                                                                                                                                                           | State                                                                            |
 | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| 1    | Env flags PR: `REDIS_DISABLE` and `HIDE_TRPC_LOGS` parsed with `z.stringbool()`                                                                                                                                   | Committed locally on `fix/env-boolean-flags`                                     |
+| 1    | Env flags PR: `REDIS_DISABLE` and `HIDE_TRPC_LOGS` parsed with `z.stringbool()`                                                                                                                                   | Opened: [#1245](https://github.com/Merit-Systems/x402scan/pull/1245)             |
 | 2    | Proposal issue                                                                                                                                                                                                    | Drafted: [`merit-proposal-issue.md`](outreach/merit-proposal-issue.md)           |
 | 3    | OpenZeppelin: is the fund account stable?                                                                                                                                                                         | Drafted: [`openzeppelin-fund-account.md`](outreach/openzeppelin-fund-account.md) |
 | 4    | PR 1: `Chain.STELLAR` (outside `SUPPORTED_CHAINS`), `Network.STELLAR` with OZ Channels, `normalizeAddress` keeping Stellar case, `EvmChain` excluding Stellar, sync state, tests, and the data source Merit picks | After Merit answers                                                              |
@@ -192,7 +192,7 @@ The split is a suggestion for the kickoff, not an assignment.
 1. Read this document, then [`docs/STELLAR.md`](STELLAR.md) and [CONTRIBUTING.md](../CONTRIBUTING.md).
 2. Decide the repo home ([#17](https://github.com/EmanuXBe/x402scan/issues/17)) and grant access.
 3. Confirm roles (section 7).
-4. Review and merge [#11](https://github.com/EmanuXBe/x402scan/pull/11).
+4. Read [#11](https://github.com/EmanuXBe/x402scan/pull/11) (merged) as a short tour of the adapter and of our PR format.
 5. Run `pnpm check` locally. It fails on `main` today for known reasons ([#18](https://github.com/EmanuXBe/x402scan/issues/18)); fixing that is a good first issue.
 6. Pick M1 issues and assign them.
 7. Agree on a weekly sync and where async discussion happens (issues first).
